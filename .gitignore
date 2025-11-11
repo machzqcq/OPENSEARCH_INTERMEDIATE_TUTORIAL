@@ -1,0 +1,26 @@
+**/*.json
+**/*.csv
+**/*.zip
+**/*.parquet
+**/*.log
+**/*.html
+**/*.js
+**/*.css
+**/__pycache__
+**/venv
+**/.venv
+**/snapshots*
+**/temp
+**/LICENSE*
+**/*.pt
+**/*.onnx
+**/*.safetensors
+**/vocab.txt
+**/docs_pdf_weasyprint
+**/mermaid_diagrams
+**/mermaid_images
+**/tokenizer
+**/.env
+*.bak
+*.xlsx
+**/0. DATA
