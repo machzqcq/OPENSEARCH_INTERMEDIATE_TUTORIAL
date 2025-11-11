@@ -1,5 +1,5 @@
 # 📖 LLM Agents & RAG - Complete Learning Guide
-
+![alt text](../image.png)
 ## 🎯 Quick Navigation
 
 ### For Students - Where to Start?

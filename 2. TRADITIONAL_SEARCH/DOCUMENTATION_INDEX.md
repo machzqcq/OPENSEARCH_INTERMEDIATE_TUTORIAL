@@ -1,4 +1,5 @@
 # 📖 Traditional Search - Complete Learning Guide
+![alt text](../image.png)
 
 ## 🎯 Quick Navigation
 

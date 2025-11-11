@@ -47,9 +47,16 @@ The previous course (BASIC level) is published here:
 - **Tutorial**: In each of the main folder, there is subfolder [my_tutorial](./opensearch/my_tutorial/), that contains the majority of what I instruct. 
 - **Code**: All code is inside [scripts](./opensearch/my_tutorial/scripts/) subfolder and [notebook](./opensearch/my_tutorial/notebooks/) subfolder. Contains python, shell, docker compose files etc.
 - **Data**: subfolder **[0. DATA](./0.%20DATA/)** contains all datasets used for this course. All data is provided as separate link to download (because we cannot check in data into repo)
-- **Documentation**: 
-  - `No PPTs for this course`
-  - **I have used ONLY Markdown files for explaining the concepts that are fully documented as close as possible to the code** (That means if you checkout this repo and follow the videos - you probably don't need any other resources. Less switching time > less switching context > more memory retained) 
+
+# PRESENTATIONS 
+- `No PPTs for this course` but instead...
+- **I have used ONLY Markdown files for presentation content & explaining concepts**. The .md files are co-located with code files and also aggregated at module level (That means if you checkout this repo and follow the videos - you probably don't need any other resources. Less switching time > less switching context > more memory retained)
+  - Does that mean I have to open the repo every time to learn ? Nopes
+  - Is there a way for me to review the content without having to open vs code :) Yes indeed!
+  - You can export the presentation content for the entire course OR pick and choose specific modules/sub modules into pdf, html etc.
+  - **Why did I choose this way instead of .ppt format etc. ?** This course is AI heavy and as you get deeper into AI agents, you would soon realize that markdown format is how agents transfer or exchange context. So I practice-before-preach i.e. use Markdown (and later export to various formats like ppt , pdf, html etc.) and believe that the student taking the course would benefit immensely by adopting this standard (thank me later!)
+- **Markdown preview enhanced** - vs code extension - can render markdown into a presentable format and can export to pdf, ppt, html etc. We will use this for all presentation modes. You can also export all .md files into pdf to learn concepts on the go if you wish.
+- **Alternatives** - There are many more alternatives like pandoc, marp etc. to render markdown into presentation formats. For e.g. marp can export into pptx , however it doesn't support mermaid diagram rendering (yet). Otherwise marp would have been a good choice to bridge more conventional folks (who like pptx) with non-conventional (who like reveal.js etc.)
 
 
 # HARDWARE, TOOLS & SOFTWARE
@@ -59,7 +66,7 @@ The previous course (BASIC level) is published here:
 - **CLIENT OPERATING SYSTEM**: This is where we launch the IDE and our primary interface for the course. This can be `windows` or `linux` or `mac`
 - **DOCKER**: Docker version 28.4.0, build d8eb465 (frankly any latest version should work)
 - **PROGRAMMING LANGUAGES**: Python 3.12.11 (or greater) and modules, shell, SQL/DQL (comes with opensearch)
-- **IDE**: VS CODE 1.105.1 (primarily) and extensions, Jupyter
+- **IDE**: VS CODE 1.105.1 (primarily) and extensions, Jupyter  
 
 # STUDENT ENVIRONMENT
 There are many ways to align infrastructure to do this course, however the below diagram is what we will be conforming to:  
@@ -82,3 +89,4 @@ Entire course execution is mostly inside docker, so as long as you have docker r
 - On aws ec2 ubuntu instance, if you get error on `permission denied for /var/run/docker.sock`, then execute `sudo chmod 666 /var/run/docker.sock`
 - When running a notebook first time, vscode might ask to install ipykernel package: Go ahead and install ![alt text](image-3.png)
 - `Run selected python code in interactive window`- This functionality is provided by both python and jupyter extensions from microsoft. Ensure you have them installed. After that, from vscode > File > Preferences > Settings ![setting](./python-run-selection-interactive-window.png)
+- `Markdown enhanced extension sometimes cannot find chrome path` (puppeteer used chrome to export markdown to pdf). Use the setting below to point to exact path ![chrome path](./markdown-enhanced-chrome-path.png)

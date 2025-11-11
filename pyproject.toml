@@ -1,5 +1,5 @@
 [project]
-name = "ai_ml_search_with_opensearch"
+name = "ai_ml_search_with_opensearch_intermediate"
 version = "0.1.0"
 description = "Project dependencies for OpenSearch-related scripts and notebooks."
 requires-python = "==3.12.11"
