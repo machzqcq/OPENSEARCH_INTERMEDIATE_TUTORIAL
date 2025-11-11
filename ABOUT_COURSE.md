@@ -25,6 +25,7 @@ The previous course (BASIC level) is published here:
 
 
 # PREREQUISITES FOR THE COURSE
+- **Prequel Course**: There is a [BASIC level course](https://www.udemy.com/course/ai-ml-search-with-opensearch/) that covers elementary fundamentals and concepts at a slower pace. I would encourage you to complete that course though it is not mandatory because I touch upon topics and fill-in concepts where necessary in this INTERMEDIATE course too.
 - **Human taking the course**: 
   - Eagerness and excitement to learn and understand how `search` worked traditionally vs. `AI/Ml-driven search` from ground up
   - Basics of being able to `navigate in a linux environment` (e.g. ls, rm, cd)
@@ -44,8 +45,8 @@ The previous course (BASIC level) is published here:
 - Many more (follow the course) 
 
 # ORGANIZATION OF THE COURSE
-- **Tutorial**: In each of the main folder, there is subfolder [my_tutorial](./opensearch/my_tutorial/), that contains the majority of what I instruct. 
-- **Code**: All code is inside [scripts](./opensearch/my_tutorial/scripts/) subfolder and [notebook](./opensearch/my_tutorial/notebooks/) subfolder. Contains python, shell, docker compose files etc.
+- **Tutorial**: Main modules are top level folders and sub-modules are folders at depth 2 and so on.
+- **Code**: All code is within each module/sub-module folder. Contains python, shell, docker compose files etc.
 - **Data**: subfolder **[0. DATA](./0.%20DATA/)** contains all datasets used for this course. All data is provided as separate link to download (because we cannot check in data into repo)
 
 # PRESENTATIONS 

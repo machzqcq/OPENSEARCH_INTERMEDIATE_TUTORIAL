@@ -640,3 +640,171 @@ This folder contains everything needed to master modern data ingestion and searc
 
 ---
 
+## 🎨 Complete Mindmap: Ingest and Search Concepts Ecosystem
+
+```mermaid
+mindmap
+  root((📥 Ingest &<br/>Search Concepts))
+    🔀 Ingest Pipelines
+      📊 Processors
+        Text processors
+        Numeric processors
+        Date processors
+        Custom processors
+      🔧 Transformations
+        Field enrichment
+        Data mapping
+        Value conversion
+        Conditional processing
+      ⚙️ Configuration
+        Processor chaining
+        Error handling
+        Failure policies
+        Performance tuning
+      📍 Use Cases
+        Log parsing
+        Data enrichment
+        Schema transformation
+        Data quality checks
+    🔍 Search Pipelines
+      🎯 Query Processing
+        Query analysis
+        Term expansion
+        Filter application
+        Rewriting rules
+      📈 Result Processing
+        Score normalization
+        Ranking adjustments
+        Field boosting
+        Custom scoring
+      📦 Aggregation
+        Bucket aggregation
+        Metric calculation
+        Result combining
+        Data summarization
+    📚 Bulk Ingestion
+      ⚡ High Volume
+        Batch processing
+        Parallel loading
+        Resource optimization
+        Throughput maximization
+      🔄 Batch API
+        Bulk endpoint
+        Request batching
+        Error handling
+        Retry logic
+      💾 Memory Management
+        Buffer sizing
+        Heap optimization
+        GC tuning
+        Peak management
+      📊 Performance
+        Latency optimization
+        Throughput metrics
+        Resource utilization
+        Bottleneck analysis
+    🧮 Vector Basics
+      📍 Vector Space
+        Dimensions & magnitude
+        Similarity metrics
+        Distance calculations
+        Space types
+      🔑 Similarity Metrics
+        Cosine similarity
+        L2 (Euclidean) distance
+        Inner product
+        Hamming distance
+      🎯 KNN Algorithms
+        Exact KNN
+        Approximate KNN (ANN)
+        HNSW graphs
+        Flat indices
+      🔎 Vector Search
+        Query vector generation
+        Similarity search
+        Radius search
+        Hybrid with text search
+    🤖 Embeddings & ML
+      🧠 Embedding Models
+        Sentence Transformers
+        ONNX models
+        TorchScript models
+        Custom models
+      ⚙️ ML Pipeline
+        Vector generation
+        Embedding indexing
+        Model management
+        Performance optimization
+      🔄 Integration
+        Ingest pipelines
+        Search pipelines
+        Real-time generation
+        Batch processing
+    ⚡ Streaming Data
+      🔌 Data Prepper
+        Data ingestion
+        Buffering
+        Processing
+        Transformation
+      📊 Real-time Processing
+        Log ingestion
+        Metrics collection
+        Event processing
+        Stream aggregation
+      🏗️ Use Cases
+        Apache log processing
+        OpenTelemetry data
+        Cloud-native ingestion
+        Observability pipeline
+    🚀 Production Optimization
+      ⚡ Index Tuning
+        Refresh rate configuration
+        Merge optimization
+        Buffer sizing
+        Segment strategy
+      🔧 Configuration
+        Thread pools
+        Memory allocation
+        Query limits
+        Timeout settings
+      📈 Monitoring
+        Performance metrics
+        Query latency
+        Indexing speed
+        Resource usage
+    💾 Snapshots & Recovery
+      📸 Backup Strategy
+        Snapshot creation
+        Incremental backups
+        Repository management
+        Versioning
+      🔄 Restore Operations
+        Full restoration
+        Selective recovery
+        Alias management
+        Data migration
+      🛡️ Disaster Recovery
+        RTO optimization
+        RPO planning
+        Testing procedures
+        Documentation
+    🏢 Enterprise Scale
+      🌍 Multi-region
+        Geo-replication
+        Cross-cluster replication
+        Load balancing
+        Disaster recovery
+      📊 Large Scale
+        Index partitioning
+        Shard allocation
+        Node scaling
+        Performance scaling
+      🔒 Data Management
+        Access control
+        Retention policies
+        Data lifecycle
+        Compliance
+```
+
+---
+

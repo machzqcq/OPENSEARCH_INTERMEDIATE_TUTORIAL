@@ -761,3 +761,233 @@ This folder contains everything you need to go from zero to building production-
 
 **Your future RAG systems await! 🚀**
 
+---
+
+## 🎨 Complete Mindmap: Agentic Search & RAG Ecosystem
+
+```mermaid
+mindmap
+  root((🤖 Agentic Search<br/>& RAG Systems))
+    📊 Vector Embeddings
+      🧠 Embedding Models
+        Sentence Transformers
+        OpenSearch built-in models
+        Domain-specific models
+        Language-specific models
+      📍 Text Embedding
+        Dense vector generation
+        Semantic understanding
+        Context preservation
+        Similarity metrics
+      🎯 Sparse Encoding
+        Neural sparse vectors
+        Term expansion
+        Learned importance
+        Efficient indexing
+      🏆 Cross-Encoders
+        Result ranking
+        Relevance scoring
+        Pairwise comparison
+        Re-ranking pipeline
+      🔄 Integration
+        Ingest pipeline setup
+        Search pipeline setup
+        Real-time generation
+        Batch processing
+    🔧 Custom Models
+      🛠️ Model Building
+        PyTorch frameworks
+        TensorFlow support
+        Custom architecture
+        Model training
+      📦 Packaging
+        ONNX conversion
+        Model serialization
+        Dependency management
+        Version control
+      🔀 Integration
+        OpenSearch plugin
+        Pipeline configuration
+        Performance tuning
+        Resource allocation
+      💡 Use Cases
+        Question-Answering
+        Similarity matching
+        Intent classification
+        Entity extraction
+    🌐 External LLMs
+      🔑 Providers
+        OpenAI Integration
+        Anthropic Claude
+        DeepSeek Models
+        Ollama Local Models
+      ⚙️ Configuration
+        API authentication
+        Model selection
+        Context window
+        Temperature/parameters
+      💰 Optimization
+        Cost management
+        Token optimization
+        Caching strategies
+        Batch processing
+      🔄 Connectors
+        REST API connectors
+        SDK usage
+        Error handling
+        Retry logic
+    🧠 Agent Systems
+      🤖 Agent Architecture
+        Reasoning loop
+        Tool selection
+        Action planning
+        Result interpretation
+      🔧 Tool Definition
+        Function calling
+        Parameter definition
+        Return types
+        Error handling
+      💾 Memory Management
+        Conversation history
+        Context window
+        State preservation
+        Knowledge graphs
+      🎯 Multi-step Reasoning
+        Planning steps
+        Intermediate results
+        Dependency handling
+        Validation
+    📈 Result Reranking
+      🏆 Cross-Encoders
+        MS-MARCO models
+        Relevance scoring
+        Pairwise ranking
+        Fine-tuning
+      🔄 Reranking Pipeline
+        Initial retrieval
+        Score calculation
+        Ranking adjustment
+        Result ordering
+      ⚡ Performance
+        Latency optimization
+        Throughput scaling
+        Batch processing
+        GPU acceleration
+      🎯 Use Cases
+        Search result improvement
+        Query relevance
+        Semantic ranking
+        Quality assurance
+    🔍 RAG Flows
+      📋 Basic RAG
+        Document retrieval
+        Context assembly
+        LLM generation
+        Answer production
+      💬 Conversational RAG
+        Conversation history
+        Context preservation
+        Multi-turn dialogue
+        State management
+      📚 Multi-KB RAG
+        Multiple knowledge bases
+        Source selection
+        Dynamic indexing
+        Result merging
+      🎯 Hybrid RAG
+        BM25 retrieval
+        Vector search
+        Ranking fusion
+        Result combination
+      🔀 Advanced Features
+        Dynamic index selection
+        Query expansion
+        Result filtering
+        Re-ranking integration
+    🔀 Search Strategies
+      🎯 Semantic Search
+        Vector-based matching
+        Meaning understanding
+        Context preservation
+        Similarity scoring
+      🔤 Keyword Search
+        BM25 matching
+        Term frequency
+        Exact matches
+        Fast retrieval
+      ⚡ Hybrid Approach
+        Combined scoring
+        Result fusion
+        Balanced relevance
+        Production-ready
+      📊 Reciprocal Rank Fusion
+        RRF algorithm
+        Rank-based fusion
+        Score normalization
+        Improved results
+    🛠️ Implementation Stack
+      🔧 Backend Components
+        LLM interface
+        Vector database
+        Text search
+        Memory storage
+      🔄 Pipeline Stages
+        Query preprocessing
+        Retrieval execution
+        Result filtering
+        Generation phase
+      💾 Data Storage
+        Document store
+        Vector index
+        Knowledge base
+        Conversation logs
+      🎯 Integration Points
+        API endpoints
+        Connector configuration
+        Error handling
+        Monitoring
+    🏢 Production Patterns
+      📊 Performance
+        Latency optimization
+        Throughput scaling
+        Resource utilization
+        Cost optimization
+      🔒 Reliability
+        Error handling
+        Fallback strategies
+        Retry mechanisms
+        Circuit breakers
+      📈 Monitoring
+        Query metrics
+        LLM usage tracking
+        System health
+        Performance alerts
+      🚀 Deployment
+        Containerization
+        Orchestration
+        Load balancing
+        Auto-scaling
+    🎓 Learning Paths
+      🚀 Path 1: RAG Basics
+        Vector embeddings
+        Custom models
+        Basic RAG flows
+        Simple Q&A systems
+      🎯 Path 2: Advanced RAG
+        Conversational RAG
+        Multi-KB systems
+        Hybrid search
+        Agent systems
+      💡 Path 3: LLM Expert
+        External LLM integration
+        Provider comparison
+        Custom connectors
+        Advanced agents
+      ⚡ Path 4: Search Pro
+        Vector optimization
+        Result reranking
+        Hybrid strategies
+        Production scaling
+```
+
+---
