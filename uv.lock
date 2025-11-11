@@ -21,7 +21,7 @@ wheels = [
 ]
 
 [[package]]
-name = "ai-ml-search-with-opensearch"
+name = "ai-ml-search-with-opensearch-intermediate"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
