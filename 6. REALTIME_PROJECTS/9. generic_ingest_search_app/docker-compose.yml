@@ -23,8 +23,8 @@ services:
         soft: -1
         hard: -1
       nofile:
-        soft: 65536
-        hard: 65536
+        soft: 26144
+        hard: 26144
     volumes:
       - opensearch-data:/usr/share/opensearch/data
     ports:

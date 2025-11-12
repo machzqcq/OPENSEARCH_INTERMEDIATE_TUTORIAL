@@ -28,7 +28,8 @@ class IngestionService:
     def create_index_mapping(
         self,
         mappings: List[Dict],
-        knn_columns: List[Dict]
+        knn_columns: List[Dict],
+        pipeline_id: Optional[str] = None
     ) -> Dict:
         """
         Create OpenSearch index mapping
@@ -70,9 +71,11 @@ class IngestionService:
             else:
                 # Regular field
                 if os_type == 'text':
-                    # Add keyword sub-field for text fields
+                    # Add keyword sub-field and autocomplete analyzer for text fields
                     properties[column_name] = {
                         "type": "text",
+                        "analyzer": "autocomplete",
+                        "search_analyzer": "standard",
                         "fields": {
                             "keyword": {"type": "keyword"}
                         }
@@ -80,17 +83,42 @@ class IngestionService:
                 else:
                     properties[column_name] = {"type": os_type}
         
+        # Build settings with optional default_pipeline and custom analyzers
+        settings = {
+            "index": {
+                "knn": "true" if knn_columns else "false",
+                "number_of_shards": 1,
+                "number_of_replicas": 0
+            },
+            "analysis": {
+                "analyzer": {
+                    "autocomplete": {
+                        "type": "custom",
+                        "tokenizer": "autocomplete_tokenizer",
+                        "filter": ["lowercase"]
+                    }
+                },
+                "tokenizer": {
+                    "autocomplete_tokenizer": {
+                        "type": "edge_ngram",
+                        "min_gram": 2,
+                        "max_gram": 10,
+                        "token_chars": ["letter", "digit"]
+                    }
+                }
+            }
+        }
+        
+        # Set default_pipeline if provided
+        if pipeline_id:
+            settings["index"]["default_pipeline"] = pipeline_id
+            logger.info(f"Setting default_pipeline to {pipeline_id}")
+        
         return {
             "mappings": {
                 "properties": properties
             },
-            "settings": {
-                "index": {
-                    "knn": "true" if knn_columns else "false",
-                    "number_of_shards": 1,
-                    "number_of_replicas": 0
-                }
-            }
+            "settings": settings
         }
     
     def create_ingest_pipeline(
@@ -191,32 +219,7 @@ class IngestionService:
                     logger.error(f"Failed to auto-generate mappings: {e}")
                     raise ValueError(f"Mappings not found and auto-generation failed: {str(e)}")
             
-            if progress_callback:
-                progress_callback({
-                    "status": "processing",
-                    "message": "Creating index mapping...",
-                    "progress": 10
-                })
-            
-            # Create index
-            index_mapping = self.create_index_mapping(mappings, knn_columns)
-            logger.info(f"Created index mapping with settings: {index_mapping.get('settings', {})}")
-            
-            if self.os_service.index_exists(index_name):
-                logger.warning(f"Index {index_name} already exists, deleting...")
-                self.os_service.delete_index(index_name)
-            
-            self.os_service.create_index(index_name, index_mapping)
-            logger.info(f"Index created: {index_name}")
-            
-            if progress_callback:
-                progress_callback({
-                    "status": "processing",
-                    "message": "Index created successfully",
-                    "progress": 20
-                })
-            
-            # Create ingest pipeline if KNN columns exist
+            # Create ingest pipeline FIRST if KNN columns exist
             pipeline_id = None
             if knn_columns:
                 pipeline_id = f"{index_name}_pipeline"
@@ -228,73 +231,172 @@ class IngestionService:
                     progress_callback({
                         "status": "processing",
                         "message": "Ingest pipeline created",
-                        "progress": 30
+                        "progress": 10
                     })
             
-            # Load DataFrame
             if progress_callback:
                 progress_callback({
                     "status": "processing",
-                    "message": "Loading data from file...",
-                    "progress": 40
+                    "message": "Creating index mapping...",
+                    "progress": 15
                 })
             
-            df = self.file_service.load_dataframe(file_id)
-            total_docs = len(df)
+            # Create index with pipeline as default_pipeline
+            index_mapping = self.create_index_mapping(mappings, knn_columns, pipeline_id)
+            logger.info(f"Created index mapping with settings: {index_mapping.get('settings', {})}")
             
-            # Prepare bulk data
+            if self.os_service.index_exists(index_name):
+                logger.warning(f"Index {index_name} already exists, deleting...")
+                self.os_service.delete_index(index_name)
+            
+            self.os_service.create_index(index_name, index_mapping)
+            logger.info(f"Index created: {index_name} with default_pipeline: {pipeline_id}")
+            
             if progress_callback:
                 progress_callback({
                     "status": "processing",
-                    "message": f"Preparing {total_docs} documents for ingestion...",
-                    "progress": 50
+                    "message": "Index created successfully",
+                    "progress": 20
                 })
             
-            # Convert DataFrame to bulk format
-            bulk_body = []
-            batch_size = 500
+            # Check if file is in OpenSearch bulk format
+            is_bulk_format = self.file_service.is_bulk_format(file_id)
             
-            for idx, row in df.iterrows():
-                # Index action
-                bulk_body.append({
-                    "index": {
-                        "_index": index_name,
-                        "_id": str(idx)
-                    }
-                })
+            if is_bulk_format:
+                logger.info("File is in OpenSearch bulk format, using native bulk API")
                 
-                # Document data (convert to dict and handle NaN)
-                doc = row.to_dict()
-                # Replace NaN with None
-                doc = {k: (None if pd.isna(v) else v) for k, v in doc.items()}
-                bulk_body.append(doc)
+                if progress_callback:
+                    progress_callback({
+                        "status": "processing",
+                        "message": "Loading bulk data from file...",
+                        "progress": 40
+                    })
                 
-                # Bulk index in batches
-                if len(bulk_body) >= batch_size * 2:  # *2 because each doc has 2 entries
-                    logger.debug(f"Indexing batch with pipeline: {pipeline_id}")
+                # Get raw bulk data
+                bulk_lines = self.file_service.get_bulk_data(file_id)
+                total_docs = len(bulk_lines) // 2  # Each doc has 2 lines (action + document)
+                
+                if progress_callback:
+                    progress_callback({
+                        "status": "processing",
+                        "message": f"Preparing {total_docs} documents for native bulk ingestion...",
+                        "progress": 50
+                    })
+                
+                # Update index name in bulk data if needed
+                bulk_body = []
+                batch_size = 500
+                doc_count = 0
+                
+                for i in range(0, len(bulk_lines), 2):
+                    if i + 1 < len(bulk_lines):
+                        action_line = json.loads(bulk_lines[i])
+                        doc_line = json.loads(bulk_lines[i + 1])
+                        
+                        # Update index name in action
+                        for action_type in ['index', 'create', 'update', 'delete']:
+                            if action_type in action_line:
+                                action_line[action_type]['_index'] = index_name
+                                break
+                        
+                        bulk_body.append(action_line)
+                        bulk_body.append(doc_line)
+                        doc_count += 1
+                        
+                        # Bulk index in batches
+                        if len(bulk_body) >= batch_size * 2:
+                            logger.debug(f"Indexing batch of {len(bulk_body)//2} documents (native bulk format)")
+                            self.os_service.bulk_index(
+                                body=bulk_body,
+                                index_name=index_name
+                            )
+                            
+                            progress_pct = 50 + int((doc_count / total_docs) * 40)
+                            if progress_callback:
+                                progress_callback({
+                                    "status": "processing",
+                                    "message": f"Indexed {doc_count}/{total_docs} documents",
+                                    "progress": progress_pct
+                                })
+                            
+                            bulk_body = []
+                
+                # Index remaining documents
+                if bulk_body:
+                    logger.info(f"Indexing final batch of {len(bulk_body)//2} documents (native bulk format)")
                     self.os_service.bulk_index(
                         body=bulk_body,
-                        index_name=index_name,
-                        pipeline_id=pipeline_id
+                        index_name=index_name
                     )
+                
+                total_docs = doc_count
+                
+            else:
+                # Standard DataFrame-based ingestion
+                logger.info("Using DataFrame-based ingestion")
+                
+                # Load DataFrame
+                if progress_callback:
+                    progress_callback({
+                        "status": "processing",
+                        "message": "Loading data from file...",
+                        "progress": 40
+                    })
+                
+                df = self.file_service.load_dataframe(file_id)
+                total_docs = len(df)
+                
+                # Prepare bulk data
+                if progress_callback:
+                    progress_callback({
+                        "status": "processing",
+                        "message": f"Preparing {total_docs} documents for ingestion...",
+                        "progress": 50
+                    })
+                
+                # Convert DataFrame to bulk format
+                bulk_body = []
+                batch_size = 500
+                
+                for idx, row in df.iterrows():
+                    # Index action
+                    bulk_body.append({
+                        "index": {
+                            "_index": index_name,
+                            "_id": str(idx)
+                        }
+                    })
                     
-                    progress_pct = 50 + int((idx / total_docs) * 40)
-                    if progress_callback:
-                        progress_callback({
-                            "status": "processing",
-                            "message": f"Indexed {idx + 1}/{total_docs} documents",
-                            "progress": progress_pct
-                        })
+                    # Document data (convert to dict and handle NaN)
+                    doc = row.to_dict()
+                    # Replace NaN with None
+                    doc = {k: (None if pd.isna(v) else v) for k, v in doc.items()}
+                    bulk_body.append(doc)
                     
-                    bulk_body = []
-            
-            # Index remaining documents
-            if bulk_body:
-                logger.info(f"Indexing final batch of {len(bulk_body)//2} documents with pipeline: {pipeline_id}")
+                    # Bulk index in batches
+                    if len(bulk_body) >= batch_size * 2:  # *2 because each doc has 2 entries
+                        logger.debug(f"Indexing batch (default_pipeline will be applied automatically)")
+                        self.os_service.bulk_index(
+                            body=bulk_body,
+                            index_name=index_name
+                        )
+                        
+                        progress_pct = 50 + int((idx / total_docs) * 40)
+                        if progress_callback:
+                            progress_callback({
+                                "status": "processing",
+                                "message": f"Indexed {idx + 1}/{total_docs} documents",
+                                "progress": progress_pct
+                            })
+                        
+                        bulk_body = []
+                
+                # Index remaining documents
+                if bulk_body:
+                    logger.info(f"Indexing final batch of {len(bulk_body)//2} documents (default_pipeline will be applied)")
                 self.os_service.bulk_index(
                     body=bulk_body,
-                    index_name=index_name,
-                    pipeline_id=pipeline_id
+                    index_name=index_name
                 )
             
             if progress_callback:

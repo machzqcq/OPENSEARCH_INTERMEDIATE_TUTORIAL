@@ -82,6 +82,32 @@ class FileProcessingService:
             logger.error(f"Failed to read Excel sheets: {e}")
             raise ValueError(f"Failed to read Excel file: {str(e)}")
     
+    def is_opensearch_bulk_format(self, file_path: str) -> bool:
+        """
+        Check if JSONL file is in OpenSearch bulk format
+        
+        Args:
+            file_path: Path to the file
+            
+        Returns:
+            True if bulk format, False otherwise
+        """
+        try:
+            with open(file_path, 'r') as f:
+                # Read first two lines
+                first_line = f.readline().strip()
+                second_line = f.readline().strip()
+                
+                if first_line and second_line:
+                    first_json = json.loads(first_line)
+                    # Check if first line has index/create/update/delete action
+                    if any(key in first_json for key in ['index', 'create', 'update', 'delete']):
+                        return True
+            return False
+        except Exception as e:
+            logger.warning(f"Could not determine bulk format: {e}")
+            return False
+
     def load_dataframe(
         self,
         file_id: str,
@@ -114,7 +140,30 @@ class FileProcessingService:
                     # Read first sheet by default
                     df = pd.read_excel(file_path)
             elif extension == '.jsonl':
-                df = pd.read_json(file_path, lines=True)
+                # Check if it's OpenSearch bulk format
+                if self.is_opensearch_bulk_format(file_path):
+                    logger.info("Detected OpenSearch bulk format, extracting documents...")
+                    # Parse bulk format: every odd line is action, every even line is document
+                    documents = []
+                    with open(file_path, 'r') as f:
+                        lines = f.readlines()
+                        for i in range(1, len(lines), 2):  # Skip action lines, read document lines
+                            if i < len(lines):
+                                doc = json.loads(lines[i].strip())
+                                documents.append(doc)
+                    
+                    df = pd.DataFrame(documents)
+                    logger.info(f"Loaded {len(documents)} documents from OpenSearch bulk format")
+                    
+                    # Store bulk format indicator
+                    self.redis_client.setex(
+                        f"bulk_format:{file_id}",
+                        3600 * 24,
+                        "true"
+                    )
+                else:
+                    # Regular JSONL format (one JSON object per line)
+                    df = pd.read_json(file_path, lines=True)
             else:
                 raise ValueError(f"Unsupported file format: {extension}")
             
@@ -270,6 +319,32 @@ class FileProcessingService:
             return json.loads(data)
         return []
     
+    def is_bulk_format(self, file_id: str) -> bool:
+        """Check if file is in OpenSearch bulk format"""
+        data = self.redis_client.get(f"bulk_format:{file_id}")
+        return data == "true"
+    
+    def get_bulk_data(self, file_id: str) -> List[str]:
+        """
+        Get raw bulk data for native OpenSearch bulk ingestion
+        
+        Args:
+            file_id: File identifier
+            
+        Returns:
+            List of lines for bulk API
+        """
+        metadata = self.get_file_metadata(file_id)
+        if not metadata:
+            raise ValueError(f"File {file_id} not found")
+        
+        file_path = metadata['file_path']
+        
+        with open(file_path, 'r') as f:
+            lines = f.readlines()
+        
+        return [line.strip() for line in lines if line.strip()]
+    
     def cleanup_file(self, file_id: str):
         """Clean up file and associated data"""
         metadata = self.get_file_metadata(file_id)
@@ -284,5 +359,6 @@ class FileProcessingService:
             self.redis_client.delete(f"df_info:{file_id}")
             self.redis_client.delete(f"mappings:{file_id}")
             self.redis_client.delete(f"knn_columns:{file_id}")
+            self.redis_client.delete(f"bulk_format:{file_id}")
             
             logger.info(f"Cleaned up file: {file_id}")

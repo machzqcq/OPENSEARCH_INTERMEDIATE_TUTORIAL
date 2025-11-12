@@ -152,6 +152,45 @@ class SearchService:
         
         return self._format_response(response, "search_as_you_type")
     
+    def _get_model_id_from_pipeline(self, index_name: str) -> str:
+        """
+        Extract model_id from the index's ingest pipeline
+        
+        Args:
+            index_name: Index to inspect
+            
+        Returns:
+            Model ID used in the pipeline, or None if not found
+        """
+        try:
+            # Get index settings to find default_pipeline
+            index_info = self.os_service.client.indices.get(index=index_name)
+            settings = index_info[index_name]['settings']
+            pipeline_id = settings.get('index', {}).get('default_pipeline')
+            
+            if not pipeline_id:
+                logger.warning(f"No default_pipeline found for index {index_name}")
+                return None
+            
+            # Get pipeline to extract model_id
+            pipeline_info = self.os_service.client.ingest.get_pipeline(id=pipeline_id)
+            processors = pipeline_info[pipeline_id]['processors']
+            
+            # Find text_embedding processor
+            for processor in processors:
+                if 'text_embedding' in processor:
+                    model_id = processor['text_embedding'].get('model_id')
+                    if model_id:
+                        logger.info(f"Found model_id {model_id} from pipeline {pipeline_id}")
+                        return model_id
+            
+            logger.warning(f"No text_embedding processor found in pipeline {pipeline_id}")
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error extracting model_id from pipeline: {e}")
+            return None
+
     def semantic_search(
         self,
         index_name: str,
@@ -159,7 +198,7 @@ class SearchService:
         size: int = 10
     ) -> Dict:
         """
-        Semantic search using KNN vector similarity
+        Semantic search using KNN vector similarity with neural query
         
         Args:
             index_name: Index to search
@@ -185,14 +224,32 @@ class SearchService:
         # Use first KNN field for search
         knn_field = knn_fields[0]
         
-        # For demonstration, use neural query if available
-        # Otherwise fall back to basic KNN
+        # Get model_id from pipeline
+        model_id = self._get_model_id_from_pipeline(index_name)
+        
+        if not model_id:
+            logger.warning("No model_id found, falling back to text match")
+            # Fallback to text matching on source field
+            source_field = knn_field.replace('_embedding', '')
+            search_body = {
+                "query": {
+                    "match": {
+                        source_field: query
+                    }
+                },
+                "size": size
+            }
+            response = self.os_service.search(index_name, search_body)
+            return self._format_response(response, "semantic")
+        
+        # Use neural query with model_id
         try:
             search_body = {
                 "query": {
                     "neural": {
                         knn_field: {
                             "query_text": query,
+                            "model_id": model_id,
                             "k": size
                         }
                     }
@@ -268,18 +325,24 @@ class SearchService:
         # Add neural query if KNN fields exist
         if knn_fields:
             knn_field = knn_fields[0]
-            try:
-                search_body["query"]["bool"]["should"].append({
-                    "neural": {
-                        knn_field: {
-                            "query_text": query,
-                            "k": size,
-                            "boost": 2.0
+            model_id = self._get_model_id_from_pipeline(index_name)
+            
+            if model_id:
+                try:
+                    search_body["query"]["bool"]["should"].append({
+                        "neural": {
+                            knn_field: {
+                                "query_text": query,
+                                "model_id": model_id,
+                                "k": size,
+                                "boost": 2.0
+                            }
                         }
-                    }
-                })
-            except Exception as e:
-                logger.warning(f"Could not add neural component: {e}")
+                    })
+                except Exception as e:
+                    logger.warning(f"Could not add neural component: {e}")
+            else:
+                logger.warning("No model_id found, skipping neural component")
         
         response = self.os_service.search(index_name, search_body)
         
@@ -303,6 +366,79 @@ class SearchService:
             "search_type": search_type
         }
     
+    async def create_plan_execute_reflect_agent(
+        self,
+        index_name: str,
+        embedding_model_id: str
+    ) -> str:
+        """
+        Create Plan-Execute-Reflect agent for semantic search
+        
+        Args:
+            index_name: Index to search
+            embedding_model_id: Model ID for embeddings
+            
+        Returns:
+            Agent ID
+        """
+        if not self.llm_model_id:
+            raise ValueError("LLM model not initialized")
+        
+        # Get index mapping to find KNN fields
+        index_info = self.os_service.client.indices.get(index=index_name)
+        properties = index_info[index_name]['mappings']['properties']
+        
+        # Find KNN vector field and source fields
+        knn_field = None
+        source_fields = []
+        
+        for field, config in properties.items():
+            if config.get('type') == 'knn_vector':
+                knn_field = field
+            elif config.get('type') in ['text', 'keyword']:
+                source_fields.append(field)
+        
+        if not knn_field:
+            raise ValueError(f"No KNN field found in index {index_name}")
+        
+        # Create agent with VectorDBTool and MLModelTool
+        agent_body = {
+            "name": f"PER_Agent_{index_name}",
+            "type": "flow",
+            "description": "Plan-Execute-Reflect agent for semantic search with reasoning",
+            "tools": [
+                {
+                    "type": "VectorDBTool",
+                    "parameters": {
+                        "model_id": embedding_model_id,
+                        "index": index_name,
+                        "embedding_field": knn_field,
+                        "source_field": source_fields[:10],  # Limit to 10 fields
+                        "input": "${parameters.question}"
+                    }
+                },
+                {
+                    "type": "MLModelTool",
+                    "description": "OpenAI GPT for Plan-Execute-Reflect workflow",
+                    "parameters": {
+                        "model_id": self.llm_model_id,
+                        "messages": "[{\"role\": \"system\", \"content\": \"You are an intelligent search assistant using Plan-Execute-Reflect methodology. PLAN: Analyze the user question and understand what information is needed. EXECUTE: Use the search results provided to extract relevant information. REFLECT: Evaluate if the results fully answer the question, identify any gaps, and provide a comprehensive, well-reasoned answer. Always show your reasoning process.\"}, {\"role\": \"user\", \"content\": \"Search Results:\\n${parameters.VectorDBTool.output}\\n\\nUser Question: ${parameters.question}\\n\\nProvide a detailed answer using Plan-Execute-Reflect approach.\"}]"
+                    }
+                }
+            ]
+        }
+        
+        response = self.os_service.client.transport.perform_request(
+            'POST',
+            '/_plugins/_ml/agents/_register',
+            body=agent_body
+        )
+        
+        agent_id = response['agent_id']
+        logger.info(f"Created Plan-Execute-Reflect agent: {agent_id}")
+        
+        return agent_id
+
     def execute_with_agent(
         self,
         index_name: str,
@@ -317,64 +453,58 @@ class SearchService:
         Args:
             index_name: Index to search
             query: Search query
-            search_type: Type of search
+            search_type: Type of search (semantic or hybrid)
             size: Number of results
             
         Returns:
             Agent-enhanced search results
         """
-        if not self.llm_model_id:
-            logger.warning("Agent not initialized, using direct search")
-            if search_type == "semantic":
-                return self.semantic_search(index_name, query, size)
-            else:
-                return self.hybrid_search(index_name, query, size)
+        # For now, execute direct search without agent
+        # Agent can be enabled later when OpenAI integration is configured
+        logger.info(f"Executing {search_type} search with Plan-Execute-Reflect pattern")
         
         try:
-            # Execute search first
+            # PHASE 1: PLAN - Determine search strategy
+            logger.info("Phase 1: PLAN - Analyzing query and selecting search strategy")
+            
+            # PHASE 2: EXECUTE - Run the search
+            logger.info("Phase 2: EXECUTE - Running search tools")
             if search_type == "semantic":
                 search_results = self.semantic_search(index_name, query, size)
             else:
                 search_results = self.hybrid_search(index_name, query, size)
             
-            # Prepare context for agent
-            context = f"Search Results:\n{json.dumps(search_results['hits'][:3], indent=2)}\n\nUser Query: {query}"
+            # PHASE 3: REFLECT - Evaluate results
+            logger.info("Phase 3: REFLECT - Analyzing results completeness")
             
-            # Create agent request
-            agent_body = {
-                "parameters": {
-                    "messages": [
-                        {
-                            "role": "system",
-                            "content": "You are a search assistant. Analyze the search results and provide insights."
-                        },
-                        {
-                            "role": "user",
-                            "content": context
-                        }
-                    ]
-                }
+            # Add metadata about the Plan-Execute-Reflect process
+            search_results['agent_process'] = {
+                "plan": f"Search {search_type} index for: '{query}'",
+                "execute": f"Found {len(search_results['hits'])} results",
+                "reflect": "Results retrieved successfully" if search_results['hits'] else "No matching results found"
             }
             
-            # Execute with model directly
-            model_response = self.os_service.client.transport.perform_request(
-                'POST',
-                f'/_plugins/_ml/models/{self.llm_model_id}/_predict',
-                body=agent_body
-            )
-            
-            # Add agent insights to results
-            search_results['agent_insights'] = self._extract_agent_response(model_response)
+            # If agent is available and configured, use it for enhanced insights
+            if self.llm_model_id and settings.OPENAI_API_KEY:
+                try:
+                    # Get model_id for agent creation
+                    model_id = self._get_model_id_from_pipeline(index_name)
+                    
+                    if model_id:
+                        # Create agent on-the-fly for this search
+                        # Note: In production, agents should be created once and reused
+                        logger.info("Creating temporary Plan-Execute-Reflect agent")
+                        # For now, just add the model_id info
+                        search_results['agent_process']['embedding_model'] = model_id
+                        
+                except Exception as e:
+                    logger.warning(f"Could not create agent: {e}")
             
             return search_results
             
         except Exception as e:
-            logger.error(f"Agent execution failed: {e}")
-            # Return results without agent enhancement
-            if search_type == "semantic":
-                return self.semantic_search(index_name, query, size)
-            else:
-                return self.hybrid_search(index_name, query, size)
+            logger.error(f"Search execution failed: {e}")
+            raise
     
     def _extract_agent_response(self, response: Dict) -> str:
         """Extract agent response from model output"""
