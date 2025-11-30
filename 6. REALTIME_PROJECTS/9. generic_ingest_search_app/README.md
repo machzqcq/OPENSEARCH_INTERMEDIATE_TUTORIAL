@@ -7,16 +7,17 @@ Full-stack application for ingesting data from various file formats into OpenSea
 ### Ingestion
 - ✅ Support for multiple file formats: **CSV**, **XLSX**, **JSONL**
 - ✅ Multi-sheet Excel file handling with sheet selection
-- ✅ Live data preview before ingestion
+- ✅ Live metadata preview before ingestion
 - ✅ Automatic pandas to OpenSearch data type mapping
 - ✅ User-configurable field type overrides
 - ✅ Optional **KNN vector embeddings** for semantic search
 - ✅ Multiple pre-deployed sentence transformer models
+- ✅ **Automatic array-to-string conversion** for text embedding (handles array fields like tags)
 - ✅ Real-time ingestion progress with detailed logging
 - ✅ Comprehensive error handling with stack traces
 
 ### Search
-- ✅ **Search-as-you-type**: Real-time prefix matching
+- ✅ **Search-as-you-type**: Real-time prefix matching with optimized 'or' operator for better recall
 - ✅ **Semantic Search**: Vector similarity using KNN
 - ✅ **Hybrid Search**: Combined keyword + semantic search
 - ✅ **AI-powered search** with Plan-Execute-Reflect agents (OpenAI GPT)
@@ -102,7 +103,8 @@ Use one of the demo accounts:
 2. Select the sentence transformer model:
    - `all-MiniLM-L6-v2` (384 dims, faster)
    - `all-mpnet-base-v2` (768 dims, more accurate)
-3. Click **"Next"**
+3. **Note**: Array fields (like tags) are automatically converted to space-separated strings before embedding generation
+4. Click **"Next"**
 
 #### Step 5: Review Summary
 1. Review all configurations
@@ -338,6 +340,16 @@ docker-compose exec backend bash
 - Check ML plugin is enabled
 - View logs: `docker-compose logs backend`
 
+### Text embedding pipeline errors with array fields
+- The application automatically converts array fields to strings before embedding
+- If you see `mapper_parsing_exception` errors, ensure you're running the latest backend version
+- Arrays like `["tag1", "tag2"]` are converted to `"tag1 tag2"` before embedding generation
+
+### Search-as-you-type returns no results
+- Check that documents exist in the index: `curl -X GET "https://localhost:9200/index_name/_count" -u admin:Developer@123`
+- The search uses 'or' operator for better recall - at least one term should match
+- Verify fields are not excluded (e.g., `_embedding` fields are automatically excluded from text search)
+
 ## 📝 License
 
 This project is part of the OpenSearch Intermediate Tutorial series.
@@ -357,7 +369,7 @@ For issues and questions, refer to the course materials or create an issue in th
 ### Key Concepts Demonstrated
 
 1. **Full-stack development** with FastAPI + React
-2. **OpenSearch ingestion pipelines** with text embeddings
+2. **OpenSearch ingestion pipelines** with text embeddings and array field handling
 3. **KNN vector search** for semantic similarity
 4. **Plan-Execute-Reflect agents** for intelligent search
 5. **Docker containerization** and orchestration
@@ -370,8 +382,11 @@ For issues and questions, refer to the course materials or create an issue in th
 ### Advanced Topics Covered
 
 - Ingest pipeline creation with text_embedding processor
+- Script processors for array-to-string conversion in pipelines
 - Hybrid search combining keyword + semantic approaches
 - Agent-based search with OpenAI GPT models
+- Search query optimization (operator='or' for better recall)
+- Field filtering (excluding embedding fields from text search)
 - Asynchronous service initialization
 - Redis caching for temporary data
 - Docker health checks and service dependencies

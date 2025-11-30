@@ -130,25 +130,35 @@ class SearchService:
         index_info = self.os_service.client.indices.get(index=index_name)
         properties = index_info[index_name]['mappings']['properties']
         
-        # Find text fields
+        # Find text fields (exclude KNN embedding fields)
         text_fields = [
             field for field, config in properties.items()
-            if config.get('type') == 'text'
+            if config.get('type') == 'text' and not field.endswith('_embedding')
         ]
         
-        # Build multi-match query with phrase_prefix
+        if not text_fields:
+            logger.warning(f"No searchable text fields found in index {index_name}")
+            return {"hits": [], "total": 0, "took": 0, "search_type": "search_as_you_type"}
+        
+        # Build multi-match query using best_fields with autocomplete analyzer
+        # This leverages the edge n-gram analyzer we configured
         search_body = {
             "query": {
                 "multi_match": {
                     "query": query,
-                    "type": "phrase_prefix",
-                    "fields": text_fields
+                    "type": "best_fields",
+                    "fields": text_fields,
+                    "operator": "or",  # Use 'or' to match any term
+                    "fuzziness": "AUTO"
                 }
             },
             "size": size
         }
         
+        logger.info(f"Search-as-you-type query: {search_body}")
+        logger.info(f"Searching fields: {text_fields}")
         response = self.os_service.search(index_name, search_body)
+        logger.info(f"Search results: {response['hits']['total']['value']} hits")
         
         return self._format_response(response, "search_as_you_type")
     
@@ -218,14 +228,19 @@ class SearchService:
             if config.get('type') == 'knn_vector'
         ]
         
+        logger.info(f"Semantic search - Found KNN fields: {knn_fields}")
+        
         if not knn_fields:
-            raise ValueError("No KNN fields found in index")
+            logger.error("No KNN fields found in index")
+            raise ValueError("No KNN fields found in index. Cannot perform semantic search without vector embeddings.")
         
         # Use first KNN field for search
         knn_field = knn_fields[0]
+        logger.info(f"Using KNN field: {knn_field}")
         
         # Get model_id from pipeline
         model_id = self._get_model_id_from_pipeline(index_name)
+        logger.info(f"Model ID from pipeline: {model_id}")
         
         if not model_id:
             logger.warning("No model_id found, falling back to text match")
@@ -256,8 +271,11 @@ class SearchService:
                 },
                 "size": size
             }
+            logger.info(f"Semantic search body: {search_body}")
             response = self.os_service.search(index_name, search_body)
+            logger.info(f"Semantic search results: {response['hits']['total']['value']} hits")
         except Exception as e:
+            logger.error(f"Neural query failed: {e}", exc_info=True)
             logger.warning(f"Neural query failed, falling back to match: {e}")
             # Fallback to text matching on source field
             source_field = knn_field.replace('_embedding', '')

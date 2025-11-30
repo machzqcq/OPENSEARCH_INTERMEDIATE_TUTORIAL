@@ -141,24 +141,50 @@ class IngestionService:
         
         # Build field_map for text_embedding processor
         field_map = {}
+        source_fields = []
         for knn_col in knn_columns:
             source_field = knn_col['column_name']
             target_field = f"{source_field}_embedding"
             field_map[source_field] = target_field
+            source_fields.append(source_field)
         
         # Use the first model_id (all KNN columns use same model)
         model_id = knn_columns[0]['model_id']
         
+        # Create processors list
+        processors = []
+        
+        # Add script processor to convert array fields to strings if needed
+        # This handles cases where fields like tags contain arrays that should be treated as text
+        for source_field in source_fields:
+            processors.append({
+                "script": {
+                    "description": f"Convert {source_field} to string if it's an array",
+                    "lang": "painless",
+                    "source": f"""
+                        if (ctx.containsKey('{source_field}')) {{
+                            def field = ctx['{source_field}'];
+                            if (field instanceof List) {{
+                                ctx['{source_field}'] = field.stream().map(Object::toString).collect(Collectors.joining(' '));
+                            }} else if (field != null) {{
+                                ctx['{source_field}'] = field.toString();
+                            }}
+                        }}
+                    """
+                }
+            })
+        
+        # Add text_embedding processor
+        processors.append({
+            "text_embedding": {
+                "model_id": model_id,
+                "field_map": field_map
+            }
+        })
+        
         pipeline_body = {
             "description": f"Text embedding pipeline for {pipeline_id}",
-            "processors": [
-                {
-                    "text_embedding": {
-                        "model_id": model_id,
-                        "field_map": field_map
-                    }
-                }
-            ]
+            "processors": processors
         }
         
         self.os_service.create_ingest_pipeline(pipeline_id, pipeline_body)

@@ -49,6 +49,8 @@ async def execute_search(
     - hybrid: Combined keyword + semantic search
     """
     try:
+        logger.info(f"Search request: index={search_request.index_name}, query={search_request.query}, type={search_request.search_type}, size={search_request.size}")
+        
         os_service = request.app.state.os_service
         search_service = SearchService(os_service)
         
@@ -60,19 +62,19 @@ async def execute_search(
             )
         
         # Execute search based on type
-        if search_request.search_type == "search_as_you_type":
+        if search_request.search_type.value == "search_as_you_type":
             result = search_service.search_as_you_type(
                 search_request.index_name,
                 search_request.query,
                 search_request.size
             )
-        elif search_request.search_type == "semantic":
+        elif search_request.search_type.value == "semantic":
             result = search_service.semantic_search(
                 search_request.index_name,
                 search_request.query,
                 search_request.size
             )
-        elif search_request.search_type == "hybrid":
+        elif search_request.search_type.value == "hybrid":
             result = search_service.hybrid_search(
                 search_request.index_name,
                 search_request.query,
@@ -109,7 +111,7 @@ async def execute_search_with_agent(
     (Only for semantic and hybrid searches)
     """
     try:
-        if search_request.search_type == "search_as_you_type":
+        if search_request.search_type.value == "search_as_you_type":
             raise HTTPException(
                 status_code=400,
                 detail="Agent not supported for search-as-you-type"
