@@ -35,21 +35,142 @@ This application provides a complete business intelligence workflow:
 - AI-powered column and table descriptions
 - Downloadable metadata documentation (Excel format)
 
+```mermaid
+graph LR
+    subgraph "Metadata Enhancement Pipeline"
+        DB[(🗄️ PostgreSQL<br/>Database)] --> EXT[📊 Extract Schema<br/>information_schema]
+        EXT --> META[📋 Raw Metadata<br/>Tables, Columns, Types]
+        META --> SAMPLE[🎲 Sample Data<br/>10 random rows]
+        SAMPLE --> LLM[🤖 LLM Analysis<br/>Generate Descriptions]
+        LLM --> ENH[✨ Enhanced Metadata<br/>with Descriptions]
+        ENH --> EMB[🎯 Generate Embeddings<br/>384-dimensional]
+        EMB --> OS[(🔍 OpenSearch<br/>Vector Index)]
+    end
+    
+    style DB fill:#b2dfdb,stroke:#00695c,stroke-width:3px,color:#000
+    style EXT fill:#e1f5ff,stroke:#01579b,stroke-width:2px,color:#000
+    style META fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:#000
+    style SAMPLE fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#000
+    style LLM fill:#ffcdd2,stroke:#c62828,stroke-width:3px,color:#000
+    style ENH fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px,color:#000
+    style EMB fill:#ffe0b2,stroke:#ef6c00,stroke-width:2px,color:#000
+    style OS fill:#b3e5fc,stroke:#0277bd,stroke-width:3px,color:#000
+```
+
 ### 🤖 RAG-Powered Text-to-SQL
 - Natural language to SQL conversion
 - Hybrid search (keyword + semantic) for relevant metadata
 - Context-aware SQL generation using DeepSeek LLM
+
+```mermaid
+sequenceDiagram
+    participant U as 👤 User
+    participant UI as 🖥️ Gradio UI
+    participant OS as 🔍 OpenSearch
+    participant LLM as 🤖 DeepSeek LLM
+    participant PG as 🗄️ PostgreSQL
+    
+    rect rgb(230, 245, 255)
+        Note over U,PG: Text-to-SQL Generation Flow
+        U->>UI: Enter natural language question
+        UI->>OS: Hybrid search for metadata<br/>(BM25 + k-NN)
+        OS-->>UI: Top 10 relevant columns<br/>with descriptions
+        UI->>LLM: Prompt with:<br/>- User question<br/>- Retrieved metadata<br/>- Schema context
+        LLM-->>UI: Generated SQL query
+        UI-->>U: Display SQL for review
+        U->>UI: Execute SQL
+        UI->>PG: Run query
+        PG-->>UI: Query results
+        UI-->>U: Display data + analysis
+    end
+```
 
 ### 📊 Automatic Visualization
 - Intelligent chart type selection
 - Interactive Plotly visualizations
 - Adapts to different data types
 
+```mermaid
+graph TB
+    subgraph "Smart Visualization Engine"
+        DATA[📊 Query Results<br/>DataFrame] --> ANALYZE{🔍 Analyze<br/>Data Types}
+        
+        ANALYZE -->|2+ Numeric| SCATTER[📈 Scatter Plot<br/>Correlation]
+        ANALYZE -->|1 Numeric +<br/>1 Categorical| BAR[📊 Bar Chart<br/>Comparison]
+        ANALYZE -->|1 Numeric Only| HIST[📉 Histogram<br/>Distribution]
+        ANALYZE -->|Categorical Only| COUNT[📊 Value Counts<br/>Frequency]
+        
+        SCATTER --> PLOT[🎨 Plotly Interactive<br/>Visualization]
+        BAR --> PLOT
+        HIST --> PLOT
+        COUNT --> PLOT
+        
+        PLOT --> DISPLAY[🖥️ Display with<br/>Hover, Zoom, Pan]
+    end
+    
+    style DATA fill:#e1f5ff,stroke:#01579b,stroke-width:2px,color:#000
+    style ANALYZE fill:#fff9c4,stroke:#f57f17,stroke-width:3px,color:#000
+    style SCATTER fill:#ffccbc,stroke:#d84315,stroke-width:2px,color:#000
+    style BAR fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px,color:#000
+    style HIST fill:#b3e5fc,stroke:#0277bd,stroke-width:2px,color:#000
+    style COUNT fill:#d1c4e9,stroke:#512da8,stroke-width:2px,color:#000
+    style PLOT fill:#ffe0b2,stroke:#ef6c00,stroke-width:3px,color:#000
+    style DISPLAY fill:#dcedc8,stroke:#689f38,stroke-width:2px,color:#000
+```
+
 ### 💡 Business Intelligence Insights
 - AI-generated analysis of query results
 - Key findings and trends
 - Actionable recommendations
 - Suggested next steps
+
+```mermaid
+graph LR
+    subgraph "AI-Powered Insights Generation"
+        INPUT[📊 Inputs] --> COMBINE[🔗 Combine Context]
+        
+        subgraph "Context Components"
+            Q[❓ Original Question]
+            SQL[💻 Generated SQL]
+            STATS[📈 Statistical Analysis]
+            SAMPLE[🎲 Sample Data<br/>First 5 rows]
+        end
+        
+        Q --> COMBINE
+        SQL --> COMBINE
+        STATS --> COMBINE
+        SAMPLE --> COMBINE
+        
+        COMBINE --> LLM[🤖 LLM Analysis]
+        
+        LLM --> OUT[📄 Insights Report]
+        
+        subgraph "Report Sections"
+            FIND[🔍 Key Findings]
+            TREND[📈 Trends]
+            REC[💡 Recommendations]
+            NEXT[🎯 Next Steps]
+        end
+        
+        OUT --> FIND
+        OUT --> TREND
+        OUT --> REC
+        OUT --> NEXT
+    end
+    
+    style INPUT fill:#e1f5ff,stroke:#01579b,stroke-width:2px,color:#000
+    style Q fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:#000
+    style SQL fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#000
+    style STATS fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px,color:#000
+    style SAMPLE fill:#b3e5fc,stroke:#0277bd,stroke-width:2px,color:#000
+    style COMBINE fill:#ffe0b2,stroke:#ef6c00,stroke-width:2px,color:#000
+    style LLM fill:#ffcdd2,stroke:#c62828,stroke-width:3px,color:#000
+    style OUT fill:#dcedc8,stroke:#689f38,stroke-width:2px,color:#000
+    style FIND fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px,color:#000
+    style TREND fill:#b3e5fc,stroke:#0277bd,stroke-width:2px,color:#000
+    style REC fill:#ffe0b2,stroke:#ef6c00,stroke-width:2px,color:#000
+    style NEXT fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:#000
+```
 
 ### 🎨 User-Friendly Interface
 - Step-by-step guided workflow
@@ -59,35 +180,52 @@ This application provides a complete business intelligence workflow:
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────┐
-│   User Query    │
-│  (Natural Lang) │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│   OpenSearch    │◄───── Enhanced Metadata
-│  (Vector Store) │        with Embeddings
-└────────┬────────┘
-         │ Hybrid Search (BM25 + k-NN)
-         ▼
-┌─────────────────┐
-│  DeepSeek LLM   │◄───── Retrieved Metadata Context
-│  (SQL Gen)      │
-└────────┬────────┘
-         │ Generated SQL
-         ▼
-┌─────────────────┐
-│   PostgreSQL    │
-│   (Database)    │
-└────────┬────────┘
-         │ Query Results
-         ▼
-┌─────────────────┐
-│  Visualization  │
-│   & Insights    │
-└─────────────────┘
+```mermaid
+graph TB
+    subgraph "User Interface Layer"
+        UI[🖥️ Gradio Web App<br/>10 Interactive Tabs]
+    end
+    
+    subgraph "Application Layer"
+        APP[🔌 Python App<br/>Orchestrator]
+    end
+    
+    subgraph "OpenSearch Cluster"
+        META_IDX[(📚 Metadata Index<br/>Vector Embeddings)]
+        EMB[🎯 ML Commons<br/>Embedding Model]
+        SEARCH[🔍 Hybrid Search<br/>BM25 + k-NN]
+    end
+    
+    subgraph "External Services"
+        LLM[🤖 DeepSeek LLM<br/>SQL Generation]
+        PG[(🗄️ PostgreSQL<br/>Business Database)]
+    end
+    
+    subgraph "Output Layer"
+        VIZ[📊 Plotly<br/>Visualizations]
+        INSIGHTS[💡 AI Insights<br/>Analysis]
+    end
+    
+    UI --> APP
+    APP --> META_IDX
+    APP --> PG
+    META_IDX --> EMB
+    META_IDX --> SEARCH
+    SEARCH --> LLM
+    LLM --> PG
+    PG --> VIZ
+    PG --> INSIGHTS
+    INSIGHTS --> LLM
+    
+    style UI fill:#e3f2fd,stroke:#1565c0,stroke-width:3px,color:#000
+    style APP fill:#fff3e0,stroke:#e65100,stroke-width:3px,color:#000
+    style META_IDX fill:#b3e5fc,stroke:#0277bd,stroke-width:3px,color:#000
+    style EMB fill:#ffe0b2,stroke:#ef6c00,stroke-width:2px,color:#000
+    style SEARCH fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#000
+    style LLM fill:#ffcdd2,stroke:#c62828,stroke-width:3px,color:#000
+    style PG fill:#b2dfdb,stroke:#00695c,stroke-width:3px,color:#000
+    style VIZ fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px,color:#000
+    style INSIGHTS fill:#dcedc8,stroke:#689f38,stroke-width:2px,color:#000
 ```
 
 ## 📦 Prerequisites
@@ -187,6 +325,51 @@ The application will start on `http://localhost:7860`
 Open your browser and navigate to the URL.
 
 ## 🔄 Workflow Steps
+
+```mermaid
+graph TB
+    subgraph "Complete Workflow"
+        T1["📍 Tab 1<br/>Setup & Connect"] --> T2["📍 Tab 2<br/>Extract Metadata"]
+        T2 --> T3{"📍 Tab 3<br/>Enhance Metadata"}
+        T3 -->|Option A| T3A["🤖 Generate AI<br/>Descriptions"]
+        T3 -->|Option B| T3B["📤 Upload Existing<br/>Excel File"]
+        T3A --> T4["📍 Tab 4<br/>Download Excel"]
+        T3B --> T4
+        T4 --> T5["📍 Tab 5<br/>Ingest to OpenSearch"]
+        T5 --> T6["📍 Tab 6<br/>Ask Questions"]
+        T6 --> T7["📍 Tab 7<br/>Execute Query"]
+        T7 --> T8["📍 Tab 8<br/>Visualize Data"]
+        T8 --> T9["📍 Tab 9<br/>Business Insights"]
+        T9 -.->|New Question| T6
+    end
+    
+    subgraph "One-Time Setup"
+        T1
+        T2
+        T3
+        T4
+        T5
+    end
+    
+    subgraph "Repeatable Analysis Loop"
+        T6
+        T7
+        T8
+        T9
+    end
+    
+    style T1 fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
+    style T2 fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:#000
+    style T3 fill:#fff3e0,stroke:#e65100,stroke-width:3px,color:#000
+    style T3A fill:#ffccbc,stroke:#d84315,stroke-width:2px,color:#000
+    style T3B fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px,color:#000
+    style T4 fill:#b3e5fc,stroke:#0277bd,stroke-width:2px,color:#000
+    style T5 fill:#d1c4e9,stroke:#512da8,stroke-width:2px,color:#000
+    style T6 fill:#ffe0b2,stroke:#ef6c00,stroke-width:3px,color:#000
+    style T7 fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#000
+    style T8 fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px,color:#000
+    style T9 fill:#dcedc8,stroke:#689f38,stroke-width:2px,color:#000
+```
 
 ### Tab 1: 🔌 Setup & Connect
 
@@ -435,15 +618,27 @@ Open your browser and navigate to the URL.
 - Specify sorting/limits if wanted
 
 **Example Flow**:
+
+```mermaid
+flowchart TB
+    subgraph "RAG-Powered SQL Generation Example"
+        Q["❓ Question:<br/>'Who are my top 5 customers<br/>by total order value?'"]
+        Q --> S[🔍 Search OpenSearch]
+        S --> M["📚 Retrieved Metadata:<br/>• sales.customer table<br/>• sales.salesorderheader table<br/>• customerid, totaldue columns"]
+        M --> P["🤖 LLM Prompt:<br/>Question + Metadata + Schema"]
+        P --> G["💻 Generated SQL"]
+        G --> R["📊 Results:<br/>Top 5 customers with totals"]
+    end
+    
+    style Q fill:#e1f5ff,stroke:#01579b,stroke-width:3px,color:#000
+    style S fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#000
+    style M fill:#b3e5fc,stroke:#0277bd,stroke-width:2px,color:#000
+    style P fill:#ffe0b2,stroke:#ef6c00,stroke-width:2px,color:#000
+    style G fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px,color:#000
+    style R fill:#dcedc8,stroke:#689f38,stroke-width:2px,color:#000
 ```
-Question: "Who are my top 5 customers by total order value?"
 
-Retrieved Metadata:
-- sales.salesorderheader table (description, columns)
-- sales.customer table (description, columns)
-- Relevant columns: customerid, totaldue, etc.
-
-Generated SQL:
+```sql
 SELECT 
     c.customerid,
     c.firstname || ' ' || c.lastname as customer_name,
