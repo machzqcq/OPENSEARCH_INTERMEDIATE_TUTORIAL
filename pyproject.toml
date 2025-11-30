@@ -26,7 +26,7 @@ dependencies = [
     "accelerate==0.34.2",
     "onnx==1.16.0",
     "chardet==5.2.0",
-    "WeasyPrint==61.2",
+    "weasyprint==61.2",
     "pydyf==0.8.0",
     "pdfkit==1.0.0",
     "Flask==3.0.3",
@@ -49,4 +49,6 @@ dependencies = [
     "asyncio==4.0.0",
     "opensearch-mcp-server-py==0.4.0",
     "langchain-mcp-adapters==0.1.12",
+    "md2pdf==1.0.1",
+    "cairosvg==2.8.2",
 ]
