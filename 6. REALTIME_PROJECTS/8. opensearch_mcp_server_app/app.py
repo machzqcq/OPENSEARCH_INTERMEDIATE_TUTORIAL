@@ -65,14 +65,34 @@ Ready to start learning? Choose a tab above! 👆
 """
 
 
-async def initialize_app():
+async def initialize_app() -> Tuple[str, str]:
     """Initialize MCP client on app startup."""
     try:
         client = await get_mcp_client()
         tools = client.get_tools_info()
-        return f"✅ Connected! Found {len(tools)} tools available."
+        
+        # Create summary
+        status = f"✅ Connected! Found {len(tools)} tools available."
+        
+        # Create detailed tools table
+        tools_by_category = client.get_tools_by_category()
+        
+        tools_detail = "### 🛠️ Available Tools\n\n"
+        
+        for category, category_tools in sorted(tools_by_category.items()):
+            tools_detail += f"\n#### {category}\n\n"
+            tools_detail += "| Tool Name | Description |\n"
+            tools_detail += "|-----------|-------------|\n"
+            
+            for tool in category_tools:
+                name = tool['name']
+                desc = tool['description'][:100] + "..." if len(tool['description']) > 100 else tool['description']
+                tools_detail += f"| `{name}` | {desc} |\n"
+        
+        return status, tools_detail
+        
     except Exception as e:
-        return f"❌ Connection failed: {e}"
+        return f"❌ Connection failed: {e}", ""
 
 
 async def process_query(question: str, show_details: bool = True) -> Tuple[str, str]:
@@ -242,7 +262,7 @@ graph LR
 
 ### Operations Explained
 
-**CREATE (Index)**
+**CREATE (Index) - NOT SUPPORTED YET**
 - Add a new document with a specific ID
 - If ID exists, document is updated
 
@@ -250,7 +270,7 @@ graph LR
 - Retrieve a document by its ID
 - Fast O(1) lookup
 
-**UPDATE**
+**UPDATE - NOT SUPPORTED YET**
 - Modify an existing document
 - Can be partial (only changed fields)
 
@@ -401,34 +421,22 @@ def create_cluster_management_tab():
 
 ### Cluster Architecture
 
-```mermaid
-graph TB
-    A[Master Node]
-    B[Data Node 1]
-    C[Data Node 2]
-    D[Data Node 3]
-    E[Shard 0 Primary]
-    F[Shard 0 Replica]
-    G[Shard 1 Primary]
-    H[Shard 1 Replica]
-    
-    A -->|Manages| B
-    A -->|Manages| C
-    A -->|Manages| D
-    
-    B -->|Hosts| E
-    C -->|Hosts| F
-    B -->|Hosts| G
-    D -->|Hosts| H
-    
-    style A fill:#F44336,color:#fff
-    style B fill:#4CAF50,color:#fff
-    style C fill:#4CAF50,color:#fff
-    style D fill:#4CAF50,color:#fff
-    style E fill:#2196F3,color:#fff
-    style F fill:#2196F3,color:#fff
-    style G fill:#2196F3,color:#fff
-    style H fill:#2196F3,color:#fff
+```
+                    🎯 Master Node
+                    (Manages cluster)
+                           |
+        ┌──────────────────┼──────────────────┐
+        │                  │                  │
+    💾 Data Node 1    💾 Data Node 2    💾 Data Node 3
+        |                  |                  |
+    ┌───┴───┐          ┌───┴───┐          ┌───┴───┐
+    │       │          │       │          │       │
+  📦 S0-P  📦 S1-P    📦 S0-R  📦 S2-P    📦 S1-R  📦 S2-R
+
+Legend:
+🎯 Master Node - Coordinates the cluster
+💾 Data Node - Stores data
+📦 Shard - Data partition (P=Primary, R=Replica)
 ```
 
 ### Health Status Colors
@@ -623,6 +631,12 @@ def create_app():
             max_lines=1
         )
         
+        # Tools details
+        tools_display = gr.Markdown(
+            value="",
+            visible=True
+        )
+        
         # Welcome tab
         with gr.Tab("🏠 Welcome"):
             gr.Markdown(WELCOME_TEXT)
@@ -684,7 +698,7 @@ def create_app():
         app.load(
             fn=initialize_app,
             inputs=None,
-            outputs=status
+            outputs=[status, tools_display]
         )
     
     return app

@@ -152,6 +152,18 @@ class SearchService:
                     "fuzziness": "AUTO"
                 }
             },
+            "highlight": {
+                "type": "unified",  # Use unified highlighter for better performance
+                "fields": {
+                    field: {
+                        "fragment_size": 150,
+                        "number_of_fragments": 3,
+                        "require_field_match": False  # Allow highlighting even if match is in different field
+                    } for field in text_fields
+                },
+                "pre_tags": ["<mark>"],
+                "post_tags": ["</mark>"]
+            },
             "size": size
         }
         
@@ -159,6 +171,13 @@ class SearchService:
         logger.info(f"Searching fields: {text_fields}")
         response = self.os_service.search(index_name, search_body)
         logger.info(f"Search results: {response['hits']['total']['value']} hits")
+        
+        # Debug: Check if highlights are in response
+        if response['hits']['hits']:
+            first_hit = response['hits']['hits'][0]
+            logger.info(f"First hit has highlight: {'highlight' in first_hit}")
+            if 'highlight' in first_hit:
+                logger.info(f"Highlight fields: {list(first_hit['highlight'].keys())}")
         
         return self._format_response(response, "search_as_you_type")
     
