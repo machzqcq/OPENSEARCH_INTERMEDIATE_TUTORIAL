@@ -25,3 +25,5 @@
 *.xlsx
 **/0. DATA
 **/PDFS
+**/.cache
+**/*.egg-info/

@@ -119,9 +119,6 @@ Documentation = "https://github.com/machzqcq/OPENSEARCH_INTERMEDIATE_TUTORIAL"
 Repository = "https://github.com/machzqcq/OPENSEARCH_INTERMEDIATE_TUTORIAL.git"
 Issues = "https://github.com/machzqcq/OPENSEARCH_INTERMEDIATE_TUTORIAL/issues"
 
-[tool.setuptools]
-packages = []
-
 [tool.black]
 line-length = 100
 target-version = ["py312"]
