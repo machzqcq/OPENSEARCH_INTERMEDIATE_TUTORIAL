@@ -8,7 +8,7 @@ A complete, production-ready Gradio web application that replicates and extends 
 
 ### 📁 Project Location
 ```
-/home/ubuntu/git-projects/personal/github.com/elasticsearch_opensearch/opensearch/my_tutorial/scripts/5. REALTIME_PROJECTS/5. business_intelligence_app/
+./OPENSEARCH_INTERMEDIATE_TUTORIAL/6. REALTIME_PROJECTS/5. business_intelligence_app/
 ```
 
 ### 📄 Files Created

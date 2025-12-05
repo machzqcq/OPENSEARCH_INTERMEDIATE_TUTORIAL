@@ -20,7 +20,7 @@ services:
         hard: 65536
     volumes:
       - opensearch-data:/usr/share/opensearch/data # Creates volume called opensearch-data and mounts it to the container
-      - /home/ubuntu/git-projects/personal/github.com/elasticsearch_opensearch/0. DATA/snapshots:/usr/share/opensearch/snapshots # Volume for snapshots
+      - ./0. DATA/snapshots:/usr/share/opensearch/snapshots # Volume for snapshots
     ports:
       - 9200:9200 # REST API
       - 9600:9600 # Performance Analyzer

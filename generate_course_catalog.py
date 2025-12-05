@@ -503,7 +503,7 @@ class CourseFileCatalog:
 
 def main():
     """Main execution function."""
-    base_path = "/home/ubuntu/git-projects/personal/github.com/OPENSEARCH_INTERMEDIATE_TUTORIAL"
+    base_path = "./OPENSEARCH_INTERMEDIATE_TUTORIAL"
     output_file = "course_catalog_opensearch.jsonl"
     
     catalog = CourseFileCatalog(base_path)

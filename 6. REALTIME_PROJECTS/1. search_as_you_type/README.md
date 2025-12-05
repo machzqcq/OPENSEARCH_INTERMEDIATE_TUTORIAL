@@ -133,7 +133,7 @@ Before installation, ensure you have:
 ### 1. Clone the Repository
 
 ```bash
-cd /home/ubuntu/git-projects/personal/github.com/elasticsearch_opensearch/opensearch/my_tutorial/scripts/5.\ REALTIME_PROJECTS/search_as_you_type/
+cd OPENSEARCH_INTERMEDIATE_TUTORIAL/6.\ REALTIME_PROJECTS/search_as_you_type/
 ```
 
 ### 2. Set Up Python Environment
