@@ -158,7 +158,7 @@ def process_mermaid_diagrams(content, temp_dir):
                     pass
                 
                 # Return as embedded image in HTML
-                return f'\n<div class="mermaid-diagram"><img src="data:image/png;base64,{png_data}" alt="Mermaid Diagram" style="max-width: 100%; height: auto;"/></div>\n'
+                return f'\n<div class="mermaid-diagram"><img src="data:image/png;base64,{png_data}" alt="Mermaid Diagram"/></div>\n'
                 
             except Exception as e:
                 # Clean up temp files
@@ -223,11 +223,18 @@ def convert_md_to_pdf(md_file, base_path, output_base):
     <meta charset="utf-8">
     <title>{md_file.stem}</title>
     <style>
+        @page {{
+            size: A4;
+            margin: 2cm;
+        }}
         body {{
             font-family: 'DejaVu Sans', Arial, sans-serif;
             line-height: 1.6;
-            margin: 40px;
+            margin: 0;
+            padding: 0;
             color: #333;
+            max-width: 100%;
+            overflow-wrap: break-word;
         }}
         h1, h2, h3, h4, h5, h6 {{
             color: #2c3e50;
@@ -294,6 +301,13 @@ def convert_md_to_pdf(md_file, base_path, output_base):
             color: #6c757d;
             display: block;
             margin-bottom: 10px;
+        }}
+        img {{
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 10px auto;
+            page-break-inside: avoid;
         }}
         a {{
             color: #0366d6;

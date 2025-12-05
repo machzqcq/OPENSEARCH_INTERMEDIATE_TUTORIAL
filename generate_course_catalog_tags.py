@@ -490,8 +490,9 @@ class CourseFileCatalog:
         for entry in self.catalog:
             all_tags.extend(entry['tags'])
         
-        print(f"\nTotal unique tags: {len(set(all_tags))}")
-        print(f"Average tags per file: {len(all_tags) / len(self.catalog):.1f}")
+        print(f"Total unique tags: {len(set(all_tags))}")
+        if len(self.catalog) > 0:
+            print(f"Average tags per file: {len(all_tags) / len(self.catalog):.1f}")
         
         # Most common tags
         from collections import Counter
@@ -503,7 +504,7 @@ class CourseFileCatalog:
 
 def main():
     """Main execution function."""
-    base_path = "./OPENSEARCH_INTERMEDIATE_TUTORIAL"
+    base_path = "."
     output_file = "course_catalog_opensearch.jsonl"
     
     catalog = CourseFileCatalog(base_path)
