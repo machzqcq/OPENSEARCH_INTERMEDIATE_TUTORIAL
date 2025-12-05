@@ -1,0 +1,122 @@
+[project]
+name = "ai-ml-search-with-opensearch-intermediate"
+version = "0.1.0"
+description = "Intermediate OpenSearch tutorial: AI/ML search, RAG flows, and agentic search patterns with comprehensive examples and best practices."
+authors = [
+    {name = "OpenSearch Community", email = "info@opensearch.org"}
+]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
+
+[dependencies]
+python = "3.12.11"
+
+# Core OpenSearch
+opensearch-py = "3.0.0"
+opensearch-py-ml = "1.3.0"
+
+# Data Processing
+pandas = "2.2.3"
+pyarrow = "17.0.0"
+chardet = "5.2.0"
+
+# Jupyter & Interactive
+ipython = "9.5.0"
+ipykernel = "6.30.1"
+jupyter = "1.1.1"
+ipywidgets = "8.1.7"
+jupyter-resource-usage = "1.2.0"
+
+# Visualization & Utilities
+treelib = "1.7.0"
+wordcloud = "1.9.4"
+plotly = "6.3.0"
+seaborn = "0.13.2"
+
+# Machine Learning & Embeddings
+pytorch::torch = "2.8.0"
+sentence-transformers = "5.1.2"
+accelerate = "0.34.2"
+onnx = "1.16.0"
+huggingface-hub = "0.34.4"
+
+# LLM & RAG
+langchain = "0.3.27"
+langchain-openai = "0.3.33"
+langchain-chroma = "0.2.6"
+chromadb = "1.1.0"
+openai = "1.107.3"
+anthropic = "0.69.0"
+
+# MCP (Model Context Protocol)
+fastmcp = "2.2.0"
+opensearch-mcp-server-py = "0.4.0"
+langchain-mcp-adapters = "0.1.12"
+
+# PDF & Documentation
+weasyprint = "61.2"
+pydyf = "0.8.0"
+pdfkit = "1.0.0"
+md2pdf = "1.0.1"
+cairosvg = "2.8.2"
+mkdocs = "1.6.1"
+mkdocs-material = "9.5.37"
+mdutils = "1.8.0"
+
+# Observability
+opentelemetry-api = "1.27.0"
+opentelemetry-sdk = "1.27.0"
+opentelemetry-exporter-otlp = "1.27.0"
+flask = "3.0.3"
+
+# Configuration & Utilities
+python-dotenv = "1.0.1"
+pyyaml = "6.0.2"
+deprecated = "1.2.14"
+beautifulsoup4 = "4.12.2"
+faker = "37.11.0"
+
+[pypi-options]
+find-links = []
+
+[target.linux-64.dependencies]
+# Linux-specific dependencies can be added here if needed
+
+[target.osx-64.dependencies]
+# macOS x86_64 specific dependencies can be added here if needed
+
+[target.osx-arm64.dependencies]
+# macOS ARM64 specific dependencies can be added here if needed
+
+[target.win-64.dependencies]
+# Windows specific dependencies can be added here if needed
+
+[environments]
+default = ["py312"]
+
+[environments.dev]
+channels = ["conda-forge"]
+dependencies = [
+    "pytest = 7.4.3",
+    "pytest-cov = 4.1.0",
+    "black = 23.12.1",
+    "isort = 5.13.2",
+    "flake8 = 6.1.0",
+    "mypy = 1.7.1",
+]
+
+[environments.docs]
+channels = ["conda-forge"]
+dependencies = [
+    "mkdocs = 1.6.1",
+    "mkdocs-material = 9.5.37",
+]
+
+[tasks]
+# Development tasks
+lint = "black . && isort . && flake8 ."
+format = "black . && isort ."
+type-check = "mypy ."
+test = "pytest --cov=opensearch_intermediate_tutorial tests/"
+docs-serve = "mkdocs serve"
+docs-build = "mkdocs build"
