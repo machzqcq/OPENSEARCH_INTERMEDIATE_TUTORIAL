@@ -1,4 +1,5 @@
 # 🚀 OpenSearch: The Future of Enterprise Search & AI Integration
+![OpenSearch AI ML Search](./static_images/ai_ml_search_opensearch_intermediate.jpeg)
 
 ---
 
@@ -22,6 +23,65 @@ graph TD
     style G fill:#FFB4D7
     style I fill:#F0E68C
 ```
+
+---
+
+## ⚡ Speed of Search Depends on Layout
+
+The key insight: **how we organize data determines how fast we can find it**. This is the essence of indexing!
+
+Consider organizing a wardrobe—the same clothing collection can be arranged multiple ways, each optimizing for different queries:
+
+```mermaid
+graph TB
+    WARDROBE["👕 Same Wardrobe,<br/>Different Organizations"]
+    
+    WARDROBE -->|Query: Need blue shirt?| C["📋 By Color<br/>All blues together<br/>✅ Fast<br/>❌ Hard to find age-appropriate"]
+    
+    WARDROBE -->|Query: Clothes for youngest?| A["📋 By Age<br/>Child's sizes grouped<br/>✅ Fast<br/>❌ Hard to find by color"]
+    
+    WARDROBE -->|Query: Winter clothes?| S["📋 By Season<br/>Winter section ready<br/>✅ Fast<br/>❌ Hard to find by occasion"]
+    
+    WARDROBE -->|Query: Birthday outfit?| O["📋 By Occasion<br/>Formal/Casual/Party<br/>✅ Fast<br/>❌ Hard to find by season"]
+    
+    WARDROBE -->|Query: Most worn items?| U["📋 By Usage<br/>Frequent items front<br/>✅ Fast<br/>❌ Hard to plan by season"]
+    
+    INSIGHT["🎯 KEY INSIGHT:<br/>Each layout makes some<br/>searches fast, others slow"]
+    
+    C --> INSIGHT
+    A --> INSIGHT
+    S --> INSIGHT
+    O --> INSIGHT
+    U --> INSIGHT
+    
+    INSIGHT -->|Technology Term| TECH["🔧 This is called<br/>INDEXING"]
+    
+    TECH -->|Multiple Dimensions| DIM["📊 We need multiple<br/>indexes for different<br/>search patterns"]
+    
+    style WARDROBE fill:#FFE5B4
+    style C fill:#B4D7FF
+    style A fill:#98FB98
+    style S fill:#DDA0DD
+    style O fill:#FFB4D7
+    style U fill:#F0E68C
+    style INSIGHT fill:#87CEEB
+    style TECH fill:#FFD700
+    style DIM fill:#FFD700
+```
+
+### The Indexing Challenge
+
+**The same data can be indexed many ways:**
+- Index by color → color queries are ⚡ fast
+- Index by age → age queries are ⚡ fast
+- Index by season → season queries are ⚡ fast
+- Index by occasion → occasion queries are ⚡ fast
+- Index by usage → usage queries are ⚡ fast
+
+**But we can't optimize for ALL dimensions simultaneously!** This is why modern search systems like OpenSearch allow you to:
+- Create **multiple indexes** for different dimensions
+- Use **hybrid search** combining different indexes
+- Apply **smart ranking** to balance competing query patterns
 
 ---
 
