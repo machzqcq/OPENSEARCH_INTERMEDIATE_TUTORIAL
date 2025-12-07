@@ -232,29 +232,33 @@ graph TB
 
 ```mermaid
 graph TB
-    subgraph UseCase1["🛍️ E-Commerce"]
-        UC1["Product Search<br/>Millions of SKUs<br/>Fast faceted search<br/>AI recommendations"]
-        UC1 -->|OpenSearch Wins| W1["Lower costs per query<br/>Custom ranking<br/>Agentic recommendations"]
+    subgraph Row1["Row 1: Consumer & Healthcare"]
+        subgraph UseCase1["🛍️ E-Commerce"]
+            UC1["Product Search<br/>Millions of SKUs<br/>Fast faceted search<br/>AI recommendations"]
+            UC1 -->|OpenSearch Wins| W1["Lower costs per query<br/>Custom ranking<br/>Agentic recommendations"]
+        end
+        
+        subgraph UseCase2["🏥 Healthcare"]
+            UC2["Medical Records Search<br/>Patient data retrieval<br/>Research paper discovery<br/>Compliance critical"]
+            UC2 -->|OpenSearch Wins| W2["No license tracking<br/>On-prem deployment<br/>Semantic search for outcomes"]
+        end
+        
+        subgraph UseCase3["🤖 AI/ML"]
+            UC5["Semantic Search<br/>RAG systems<br/>Agentic reasoning<br/>LLM grounding"]
+            UC5 -->|OpenSearch Wins| W5["Native integration<br/>ML-Commons built-in<br/>Future-proof AI stack"]
+        end
     end
     
-    subgraph UseCase2["🏥 Healthcare"]
-        UC2["Medical Records Search<br/>Patient data retrieval<br/>Research paper discovery<br/>Compliance critical"]
-        UC2 -->|OpenSearch Wins| W2["No license tracking<br/>On-prem deployment<br/>Semantic search for outcomes"]
-    end
-    
-    subgraph UseCase3["💼 Enterprise"]
-        UC3["Document Management<br/>Compliance search<br/>Internal KMS<br/>Audit trails required"]
-        UC3 -->|OpenSearch Wins| W3["Cost effective scaling<br/>Full audit control<br/>Custom security"]
-    end
-    
-    subgraph UseCase4["📊 Analytics"]
-        UC4["Log Search<br/>Time-series analysis<br/>Real-time insights<br/>At massive scale"]
-        UC4 -->|OpenSearch Wins| W4["Lower cloud bills<br/>Better compression<br/>Custom aggregations"]
-    end
-    
-    subgraph UseCase5["🤖 AI/ML"]
-        UC5["Semantic Search<br/>RAG systems<br/>Agentic reasoning<br/>LLM grounding"]
-        UC5 -->|OpenSearch Wins| W5["Native integration<br/>ML-Commons built-in<br/>Future-proof AI stack"]
+    subgraph Row2["Row 2: Enterprise & Analytics"]
+        subgraph UseCase4["💼 Enterprise"]
+            UC3["Document Management<br/>Compliance search<br/>Internal KMS<br/>Audit trails required"]
+            UC3 -->|OpenSearch Wins| W3["Cost effective scaling<br/>Full audit control<br/>Custom security"]
+        end
+        
+        subgraph UseCase5["📊 Analytics"]
+            UC4["Log Search<br/>Time-series analysis<br/>Real-time insights<br/>At massive scale"]
+            UC4 -->|OpenSearch Wins| W4["Lower cloud bills<br/>Better compression<br/>Custom aggregations"]
+        end
     end
     
     style UseCase1 fill:#FFE5B4
@@ -262,6 +266,8 @@ graph TB
     style UseCase3 fill:#B4D7FF
     style UseCase4 fill:#98FB98
     style UseCase5 fill:#DDA0DD
+    style Row1 fill:#F5F5F5
+    style Row2 fill:#F5F5F5
 ```
 
 ### Cost Analysis: The Financial Case for OpenSearch

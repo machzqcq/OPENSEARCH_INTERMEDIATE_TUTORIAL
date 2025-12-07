@@ -9,8 +9,8 @@ ENV REACT_APP_API_URL=$REACT_APP_API_URL
 # Copy package files
 COPY package.json package-lock.json* ./
 
-# Install dependencies (using install instead of ci for flexibility with lock file)
-RUN npm install --omit=dev && npm cache clean --force
+# Install ALL dependencies (needed for react-scripts build)
+RUN npm install && npm cache clean --force
 
 # Copy application code
 COPY . .
