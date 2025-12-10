@@ -61,7 +61,7 @@ fi
 # Update Package Lists
 # =============================================================================
 print_section "📦 Updating Package Lists"
-sudo apt update
+sudo apt update  && sudo apt install -y curl libatomic1
 
 # =============================================================================
 # Install Git
@@ -148,6 +148,9 @@ fi
 # Load nvm into current session
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+# source .bashrc
+source ~/.bashrc
 
 # Install Node.js
 if command -v node &> /dev/null; then
