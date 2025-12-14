@@ -1,5 +1,5 @@
 # Text Search Scenarios - ElasticSearch/OpenSearch
-
+![alt text](../../static_images/ai_ml_search_opensearch_intermediate.jpeg)
 ## 1. Basic Mapping & Search
 Get index mapping and perform basic match_all query on the ecommerce index.
 
