@@ -6,6 +6,7 @@ import json
 
 IS_AUTH = True # Set to True if authentication is required
 HOST = 'localhost' # Replace with your OpenSearch hostname or IP address
+DATA_FOLDER = '../0. DATA'
 
 if IS_AUTH:
     # Initialize the OpenSearch client
@@ -26,7 +27,7 @@ else:
         ssl_show_warn=False
     )
 
-BASE_DIR = "../../data"
+BASE_DIR = DATA_FOLDER
 # Load the data from the JSON file
 data = []
 with open(f"{BASE_DIR}/ecommerce.json", 'r') as file:
