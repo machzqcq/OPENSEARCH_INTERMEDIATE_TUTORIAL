@@ -12,4 +12,4 @@ log-pipeline:
         insecure: true
         username: admin
         password: Developer@123
-        index: apache_logs
+        index: otel_logs
