@@ -1,5 +1,7 @@
 # OpenSearch Ingestion Optimization Guide
 
+![Course](../../static_images/ai_ml_search_opensearch_intermediate.jpeg)
+
 > **Performance Results**: These techniques can improve ingestion speed by **65%** and reduce disk storage by **19%**.
 
 ## 📊 Performance Overview
