@@ -10,7 +10,7 @@ OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 # 3. Connect to OpenSearch / Initialize the OpenSearch client
 IS_AUTH = True
-OLLAMA_IP_URL = '10.2.23.181:11434'  # Change to your Ollama host if needed. See README.md for more details.
+OLLAMA_IP_URL = 'ollama:11434'  # Change to your Ollama host if needed. See README.md for more details.
 OLLAMA_MODEL = "smollm2:135m" # neural-chat:latest if you have more memory on ollama_ip_url host
 HOST = 'localhost'
 if IS_AUTH:
@@ -38,7 +38,8 @@ cluster_settings = {
     "persistent": {
         "plugins.ml_commons.trusted_connector_endpoints_regex": [".*"],
         "plugins.ml_commons.only_run_on_ml_node": "false",
-        "plugins.ml_commons.memory_feature_enabled": "true"
+        "plugins.ml_commons.memory_feature_enabled": "true",
+        "plugins.ml_commons.connector.private_ip_enabled": "true"
     }
 }
 client.cluster.put_settings(body=cluster_settings)
@@ -265,7 +266,7 @@ agent_register_body = {
       "type": "VectorDBTool",
       "parameters": {
         "model_id": embedding_model_id,
-        "index": "my_test_data",
+        "index": index_name,
         "embedding_field": "embedding",
         "source_field": [
           "text"

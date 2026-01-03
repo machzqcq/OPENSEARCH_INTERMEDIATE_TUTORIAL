@@ -17,11 +17,12 @@ warnings.filterwarnings("ignore", message="using SSL with verify_certs=False is 
 # 1. Load environment variables from .env file
 load_dotenv("../../.env")
 
-# 2. Retrieve the OpenAI API key from environment variables
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+# 2. Configure Ollama settings
+OLLAMA_IP_URL = 'ollama:11434'  # Change to your Ollama host if needed
+OLLAMA_MODEL = 'smollm2:135m'  # neural-chat:latest if you have more memory on ollama_ip_url host
 
 # Section 3: OpenSearch Client Setup
-HOST = '192.168.1.192'  # Opensearch host
+HOST = 'localhost'  # Opensearch host
 CLUSTER_URL = {'host': HOST, 'port': 9200}
 
 def get_os_client(cluster_url=CLUSTER_URL,
@@ -49,9 +50,10 @@ ml_client = MLCommonClient(client)
 # 4. Modify cluster settings
 cluster_settings = {
     "persistent": {
-        "plugins.ml_commons.trusted_connector_endpoints_regex": "^https://api\\.openai\\.com/.*$",
+        "plugins.ml_commons.trusted_connector_endpoints_regex": [".*"],
         "plugins.ml_commons.only_run_on_ml_node": "false",
         "plugins.ml_commons.memory_feature_enabled": "true",
+        "plugins.ml_commons.connector.private_ip_enabled": "true",
         "plugins": {
             "ml_commons": {
                 "allow_registering_model_via_url": "true",
@@ -174,28 +176,28 @@ print("Model group registered:", response)
 llm_model_group_id = response['model_group_id']
 
 # Section 10: Create Connector
-# 12. Create connector
+# 12. Create connector - Using Ollama instead of OpenAI
 llm_connector_body = {
-    "name": "OpenAI Chat Connector",
-    "description": "The connector to public OpenAI model service for GPT 3.5",
+    "name": "ollama_connector",
+    "description": "Connector for Ollama API",
     "version": 1,
     "protocol": "http",
     "parameters": {
-        "endpoint": "api.openai.com",
-        "model": "gpt-3.5-turbo"
+        "endpoint": OLLAMA_IP_URL,
+        "model": OLLAMA_MODEL
     },
     "credential": {
-        "openAI_key": OPENAI_API_KEY
+        "dummy_key": "dummy"
     },
     "actions": [
         {
             "action_type": "predict",
             "method": "POST",
-            "url": "https://${parameters.endpoint}/v1/chat/completions",
+            "url": "http://${parameters.endpoint}/api/generate",
             "headers": {
-                "Authorization": "Bearer ${credential.openAI_key}"
+                "Content-Type": "application/json"
             },
-            "request_body": "{ \"model\": \"${parameters.model}\", \"messages\": ${parameters.messages} }"
+            "request_body": "{ \"model\": \"${parameters.model}\", \"prompt\": \"${parameters.prompt}\", \"stream\": false }"
         }
     ]
 }
@@ -206,10 +208,10 @@ llm_connector_id = response['connector_id']
 # Section 11: Register and Deploy LLM Model
 # 13. Register model
 llm_model_body = {
-    "name": "openAI-gpt-3.5-turbo",
+    "name": "ollama_chat_model",
     "function_name": "remote",
     "model_group_id": llm_model_group_id,
-    "description": "test model",
+    "description": f"Ollama {OLLAMA_MODEL} chat model",
     "connector_id": llm_connector_id
 }
 response = client.transport.perform_request('POST', '/_plugins/_ml/models/_register', body=llm_model_body)
@@ -246,16 +248,7 @@ while True:
 # 16. Test prediction
 test_llm_predict_body = {
     "parameters": {
-        "messages": [
-            {
-                "role": "system",
-                "content": "You are a helpful assistant."
-            },
-            {
-                "role": "user",
-                "content": "Hello!"
-            }
-        ]
+        "prompt": "Why is the sky blue? Please explain in a simple way."
     }
 }
 predict_response = client.transport.perform_request(
@@ -290,16 +283,7 @@ agent_register_body = {
             "description": "A general tool to answer any question",
             "parameters": {
                 "model_id": llm_model_id,
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": "You are a professional data analyst. You will always answer a question based on the given context first. If the answer is not directly shown in the context, you will analyze the data and find the answer. If you don't know the answer, just say you don't know."
-                    },
-                    {
-                        "role": "user",
-                        "content": "Context:\n${parameters.VectorDBTool.output}\n\nQuestion:${parameters.question}\n\n"
-                    }
-                ]
+                "prompt": "You are a professional data analyst. You will always answer a question based on the given context first. If the answer is not directly shown in the context, you will analyze the data and find the answer. If you don't know the answer, just say you don't know.\n\nContext:\n${parameters.VectorDBTool.output}\n\nQuestion: ${parameters.question}\n\nAnswer:"
             }
         }
     ]
