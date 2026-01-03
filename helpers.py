@@ -328,7 +328,7 @@ def restore_interns_all_snapshot(client):
         "include_global_state": False
     }
 
-    client.snapshot.create_repository(repository_name, body=repository_settings)
+    client.snapshot.create_repository(repository=repository_name, body=repository_settings)
 
     # Delete if index already exists
     try:

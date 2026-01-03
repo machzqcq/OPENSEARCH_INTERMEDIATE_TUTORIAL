@@ -16,7 +16,7 @@ import sys
 sys.path.append('../../')
 from helpers import restore_interns_all_snapshot
 
-HOST = '192.168.1.192'  # OpenSearch host
+HOST = 'localhost'  # OpenSearch host
 
 # Initialize the OpenSearch client
 client = OpenSearch(
