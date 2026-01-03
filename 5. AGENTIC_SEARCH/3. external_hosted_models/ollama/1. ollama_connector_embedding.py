@@ -29,8 +29,8 @@ load_dotenv("../../../.env")
 
 # OpenSearch cluster configuration
 HOST = 'localhost'
-OLLAMA_IP_URL = '192.168.0.151:11435'  # Change to your Ollama host if needed. See README.md for more details.
-OLLAMA_MODEL = "embeddinggemma:latest" 
+OLLAMA_IP_URL = 'ollama:11434'  # Change to your Ollama host if needed. See README.md for more details.
+OLLAMA_MODEL = 'qwen3-embedding:0.6b'  # Change to your desired Ollama model
 PORT = 9200
 CLUSTER_URL = {'host': HOST, 'port': PORT}
 DEFAULT_USERNAME = 'admin'
@@ -76,12 +76,11 @@ def main():
     
     This function performs the following steps:
     1. Initialize OpenSearch client and configure cluster settings
-    2. List available Ollama models and download the specified model
-    3. Create model group for organizing ML models
-    4. Create Ollama connector for API communication
-    5. Register and deploy the embedding model
-    6. Test the model with sample data
-    7. Clean up resources
+    2. Create model group for organizing ML models
+    3. Create Ollama connector for API communication
+    4. Register and deploy the embedding model
+    5. Test the model with sample data
+    6. Clean up resources
     """
     
     print("=== Ollama Embedding Model Integration with OpenSearch ===\n")
@@ -105,62 +104,9 @@ def main():
     print("✓ Cluster settings configured successfully\n")
     
     # ============================================================================
-    # STEP 2: LIST AVAILABLE MODELS AND DOWNLOAD SPECIFIED MODEL
+    # STEP 2: CREATE MODEL GROUP
     # ============================================================================
-    print("Step 2: Listing available Ollama models from endpoint...")
-    try:
-        resp = requests.get(f"http://{OLLAMA_IP_URL}/api/tags")
-        resp.raise_for_status()
-        models = resp.json().get('models', [])
-        if not models:
-            print("No models returned from Ollama endpoint.")
-            return
-        print("Available Ollama models:")
-        for i, m in enumerate(models, start=1):
-            print(f"  {i}. {m.get('name')}")
-    except Exception as e:
-        print(f"Could not list models from {OLLAMA_IP_URL}: {e}")
-        return
-    
-    # Download the model
-    try:
-        print(f"Downloading model: {OLLAMA_MODEL}\n")
-        payload = {
-            "name": OLLAMA_MODEL,
-            "stream": True # Set to True to stream the pull progress
-            }
-        headers = {"Content-Type": "application/json"}
-        # Send the POST request to pull the model
-        response = requests.post(f"http://{OLLAMA_IP_URL}/api/pull", headers=headers, data=json.dumps(payload), stream=True)
-        response.raise_for_status() # Raise an exception for bad status codes
-
-        print(f"Attempting to pull model: {OLLAMA_MODEL}")
-
-        # Process the streamed response
-        for chunk in response.iter_content(chunk_size=None):
-            if chunk:
-                try:
-                    # Decode and print each chunk of the response
-                    data = json.loads(chunk.decode('utf-8'))
-                    if "status" in data:
-                        print(f"Status: {data['status']}")
-                    if "total" in data and "completed" in data:
-                        progress = (data["completed"] / data["total"]) * 100
-                        print(f"Download Progress: {progress:.2f}%")
-                except json.JSONDecodeError:
-                    print(f"Received non-JSON chunk: {chunk.decode('utf-8')}")
-
-        print(f"Model '{OLLAMA_MODEL}' pull complete.")
-
-    except requests.exceptions.RequestException as e:
-        print(f"Error pulling model: {e}")
-        if hasattr(e, 'response') and e.response is not None:
-            print(f"Response content: {e.response.text}")
-
-    # ============================================================================
-    # STEP 3: CREATE MODEL GROUP
-    # ============================================================================
-    print("Step 3: Initializing OpenSearch Client and Creating Model Group...")
+    print("Step 2: Initializing OpenSearch Client and Creating Model Group...")
     client = get_os_client()
     model_group_name = f"ollama_embedding_group_{int(time.time())}"
     model_group_body = {"name": model_group_name, "description": "Model group for Ollama embeddings"}
@@ -169,9 +115,9 @@ def main():
     print(f"✓ Created model group '{model_group_name}' with ID: {model_group_id}\n")
 
     # ============================================================================
-    # STEP 4: CREATE OLLAMA CONNECTOR
+    # STEP 3: CREATE OLLAMA CONNECTOR
     # ============================================================================
-    print("Step 4: Creating Ollama connector...")
+    print("Step 3: Creating Ollama connector...")
     # Use the proper Ollama API format with HTTP protocol
     connector_body = {
         "name": "ollama_connector",
@@ -202,15 +148,14 @@ def main():
     print(f"✓ Created Ollama connector with ID: {connector_id}\n")
 
     # ============================================================================
-    # STEP 5: REGISTER AND DEPLOY MODEL
+    # STEP 4: REGISTER AND DEPLOY MODEL
     # ============================================================================
-    print("Step 5: Registering and Deploying Model...")
     print("Step 4: Registering and Deploying Model...")
     model_body = {
-        "name": "ollama_chat_model",
+        "name": "ollama_embedding_model",
         "function_name": "remote",
         "model_group_id": model_group_id,
-        "description": f"Ollama {OLLAMA_MODEL} chat model",
+        "description": f"Ollama {OLLAMA_MODEL} embedding model",
         "connector_id": connector_id,
         "model_format": "TORCH_SCRIPT"
     }
@@ -240,9 +185,9 @@ def main():
         time.sleep(5)
 
     # ============================================================================
-    # STEP 6: TEST MODEL WITH SAMPLE DATA
+    # STEP 5: TEST MODEL WITH SAMPLE DATA
     # ============================================================================
-    print("Step 6: Testing Model with Sample Data...")
+    print("Step 5: Testing Model with Sample Data...")
     predict_body = {"parameters": {
         "input": "Sky is blue"
     }}
@@ -255,9 +200,9 @@ def main():
         print(f"⚠ Error during prediction: {e}\n")
 
     # ============================================================================
-    # STEP 7: CLEANUP RESOURCES
+    # STEP 6: CLEANUP RESOURCES
     # ============================================================================
-    print("Step 7: Cleaning Up Resources...")
+    print("Step 6: Cleaning Up Resources...")
     cleanup_resources(client, model_id, connector_id, model_group_id)
 
 

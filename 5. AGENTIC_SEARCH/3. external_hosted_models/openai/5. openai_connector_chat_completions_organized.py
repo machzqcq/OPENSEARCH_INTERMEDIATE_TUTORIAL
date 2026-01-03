@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from opensearchpy import OpenSearch
 
 # Add helpers to path
-sys.path.append('../../')
+sys.path.append('../../../')
 from helpers import encode_image
 
 # ================================================================================

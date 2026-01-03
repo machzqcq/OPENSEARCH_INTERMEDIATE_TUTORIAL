@@ -13,7 +13,7 @@ done
 echo "Ollama is ready!"
 
 # Define the list of models to pull
-MODELS="smollm2:135m" # Add or remove models as needed
+MODELS="smollm2:135m qwen3-embedding:0.6b" # Add or remove models as needed
 
 # Pull and install models, or skip if they're already present
 for MODEL in $MODELS; do

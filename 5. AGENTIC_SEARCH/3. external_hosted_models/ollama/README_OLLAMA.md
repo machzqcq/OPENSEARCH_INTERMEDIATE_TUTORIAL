@@ -1,5 +1,5 @@
 # Ollama Local Integration Guide
-
+![Course](../../../static_images/ai_ml_search_opensearch_intermediate.jpeg)
 ## 📚 Overview
 Integration of **Ollama** - running LLMs **locally** in OpenSearch with zero API costs and complete data privacy.
 
