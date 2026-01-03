@@ -15,6 +15,7 @@ services:
       # Cluster-level optimizations
       - "cluster.routing.allocation.balance.prefer_primary=true"
       - "segrep.pressure.enabled=true"
+      - "plugins.ml_commons.only_run_on_ml_node=false"
     ulimits:
       memlock:
         soft: -1
@@ -40,6 +41,7 @@ services:
       - cluster.initial_cluster_manager_nodes=opensearch-node1,opensearch-node2
       - bootstrap.memory_lock=true
       - OPENSEARCH_HOME=/usr/share/opensearch
+      - "plugins.ml_commons.only_run_on_ml_node=false"
       - "OPENSEARCH_JAVA_OPTS=-Xms8g -Xmx8g"
       - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-Developer@123}
     ulimits:
