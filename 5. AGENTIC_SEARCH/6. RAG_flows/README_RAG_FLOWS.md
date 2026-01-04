@@ -1,4 +1,5 @@
 # RAG Flows - Complete End-to-End Implementations
+![Course](../../static_images/ai_ml_search_opensearch_intermediate.jpeg)
 
 ## 📚 Overview
 This directory contains **production-ready RAG (Retrieval-Augmented Generation) implementations** showing various architectures from simple to advanced.

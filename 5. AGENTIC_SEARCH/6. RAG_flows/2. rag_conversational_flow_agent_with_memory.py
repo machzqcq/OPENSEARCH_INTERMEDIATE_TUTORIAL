@@ -22,7 +22,7 @@ load_dotenv("../../.env")
 # Retrieve the OpenAI API key from environment variables
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
-HOST = '192.168.1.192'
+HOST = 'localhost'
 
 # Initialize the OpenSearch client
 os_client = OpenSearch(
@@ -45,7 +45,7 @@ def setup_cluster_settings():
     })
 
 
-def register_embedding_model():
+def register_deploy_embedding_model():
     """Register and deploy the sentence transformer embedding model."""
     register_response = os_client.transport.perform_request(
         'POST', 
@@ -72,7 +72,29 @@ def register_embedding_model():
         time.sleep(5)
     
     print(f"Embedding Model ID: {embedding_model_id}")
-    return embedding_model_id
+
+    # Deploy the model
+    deploy_response = os_client.transport.perform_request(
+        method='POST',
+        url=f'/_plugins/_ml/models/{embedding_model_id}/_deploy'
+    )
+    print(deploy_response)
+
+
+    # Extract deployment task_id from the response
+    deploy_task_id = deploy_response['task_id']
+
+    # Wait until the deployment status becomes completed
+    while True:
+        deployment_status = os_client.transport.perform_request(
+            method='GET',
+            url=f'/_plugins/_ml/tasks/{deploy_task_id}'
+        )
+        print(deployment_status)
+        if deployment_status['state'] == 'COMPLETED':
+            break
+        time.sleep(10)  # Wait for 10 seconds before checking again
+        return embedding_model_id
 
 
 def create_ingest_pipeline(embedding_model_id):
@@ -364,43 +386,38 @@ def explore_memory(memory_id, parent_message_id):
     print("Message traces:")
     print(message_traces_response)
 
+"""Main execution flow for RAG conversational agent."""
+print("Setting up RAG Conversational Agent with Memory...")
 
-def main():
-    """Main execution flow for RAG conversational agent."""
-    print("Setting up RAG Conversational Agent with Memory...")
-    
-    # Step 1: Configure cluster settings
-    setup_cluster_settings()
-    
-    # Step 2: Register embedding model
-    embedding_model_id = register_embedding_model()
-    
-    # Step 3: Create ingest pipeline
-    create_ingest_pipeline(embedding_model_id)
-    
-    # Step 4: Create vector index
-    create_vector_index()
-    
-    # Step 5: Load sample data
-    load_sample_data()
-    
-    # Step 6: Setup OpenAI connector and model
-    openai_model_id = setup_openai_connector()
-    
-    # Step 7: Test OpenAI model
-    test_openai_model(openai_model_id)
-    
-    # Step 8: Create RAG agent
-    agent_id = create_rag_agent(embedding_model_id, openai_model_id)
-    
-    # Step 9: Test conversation
-    memory_id, parent_message_id = test_conversation(agent_id)
-    
-    # Step 10: Explore memory
-    explore_memory(memory_id, parent_message_id)
-    
-    print("RAG Conversational Agent demo completed!")
+# Step 1: Configure cluster settings
+setup_cluster_settings()
 
+# Step 2: Register embedding model
+embedding_model_id = register_deploy_embedding_model()
 
-if __name__ == "__main__":
-    main()
+# Step 3: Create ingest pipeline
+create_ingest_pipeline(embedding_model_id)
+
+# Step 4: Create vector index
+create_vector_index()
+
+# Step 5: Load sample data
+load_sample_data()
+
+# Step 6: Setup OpenAI connector and model
+openai_model_id = setup_openai_connector()
+
+# Step 7: Test OpenAI model
+test_openai_model(openai_model_id)
+
+# Step 8: Create RAG agent
+agent_id = create_rag_agent(embedding_model_id, openai_model_id)
+
+# Step 9: Test conversation
+memory_id, parent_message_id = test_conversation(agent_id)
+
+# Step 10: Explore memory
+explore_memory(memory_id, parent_message_id)
+
+print("RAG Conversational Agent demo completed!")
+
