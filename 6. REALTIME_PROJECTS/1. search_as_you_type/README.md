@@ -1,4 +1,5 @@
 # 🔍 Search-as-you-Type E-commerce Application
+![Course](../../static_images/ai_ml_search_opensearch_intermediate.jpeg)
 
 A comprehensive, production-ready search-as-you-type application demonstrating real-time product search with multiple frontend implementations (Streamlit, Gradio, React) and a FastAPI backend powered by OpenSearch.
 

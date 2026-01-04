@@ -17,7 +17,7 @@ load_dotenv("../../.env")
 # 2. Retrieve the OpenAI API key from environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-HOST = '192.168.1.192'
+HOST = 'localhost'
 # Initialize the OpenSearch client
 os_client = OpenSearch(
     hosts=[{"host": HOST, "port": 9200}],
