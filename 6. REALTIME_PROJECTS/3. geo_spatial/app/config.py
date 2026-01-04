@@ -13,8 +13,8 @@ PASSWORD = "Developer@123"
 # Data Settings
 # Get absolute path to data file
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(_CURRENT_DIR)))))
-DATA_PATH = os.path.join(_PROJECT_ROOT, "data", "uscities.csv")
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(_CURRENT_DIR)))
+DATA_PATH = os.path.join(_PROJECT_ROOT, "0. DATA", "uscities.csv")
 
 # Index Names
 GEOPOINT_INDEX = "learning_points"
