@@ -9,7 +9,7 @@
 ```mermaid
 graph TB
     subgraph "🔧 Traditional Engineering"
-        A[MSSQL Database<br/>AdventureWorks] -->|SQLAlchemy<br/>Connection| B[Database Connector]
+        A[Postgres Database<br/>AdventureWorks] -->|SQLAlchemy<br/>Connection| B[Database Connector]
         B -->|SQL Queries<br/>INFORMATION_SCHEMA| C[Metadata Extraction]
         C -->|pandas DataFrame| D[Data Cleaning &<br/>Sampling]
     end
