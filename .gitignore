@@ -27,3 +27,4 @@
 **/PDFS
 **/.cache
 **/*.egg-info/
+**/*.arrow

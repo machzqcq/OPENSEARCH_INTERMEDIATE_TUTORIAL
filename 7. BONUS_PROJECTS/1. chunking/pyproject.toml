@@ -1,0 +1,16 @@
+[project]
+name = "text-chunking-with-chonkie"
+version = "1.0.0"
+description = "chonkie chunking"
+authors = [
+    {name = "Pradeep Macharla", email = "pradeep@automationpractice.com"}
+]
+readme = "README.md"
+requires-python = "==3.12.11"
+dependencies = [
+    "chonkie[all]==1.5.2",
+    "hf-xet>=1.2.0",
+    "ipykernel==7.1.0",
+    "ipywidgets==8.1.8",
+    "qdrant-client==1.16.2",
+]
