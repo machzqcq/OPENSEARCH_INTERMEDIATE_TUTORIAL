@@ -28,3 +28,4 @@
 **/.cache
 **/*.egg-info/
 **/*.arrow
+**/docling_tutorial_data

@@ -1,0 +1,31 @@
+[project]
+name = "chonkie-docling-langextract"
+version = "1.0.0"
+description = "Understanding chonkie, docling and langextract libraries"
+authors = [
+    {name = "Pradeep Macharla", email = "pradeep@automationpractice.com"}
+]
+readme = "README.md"
+requires-python = "==3.12.11"
+dependencies = [
+    "torch==2.7.0",
+    "chonkie[all]==1.5.2",
+    "docling[all]==2.67.0",
+    "hf-xet==1.2.0",
+    "ipykernel==7.1.0",
+    "ipywidgets==8.1.8",
+    "qdrant-client==1.16.2",
+    "reportlab==4.4.7",
+    "docling-surya==0.1.0",
+    "easyocr==1.7.2",
+]
+
+[[tool.uv.index]]
+# Optional name for the index.
+name = "torch"
+# Required URL for the index.
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "torch" }
