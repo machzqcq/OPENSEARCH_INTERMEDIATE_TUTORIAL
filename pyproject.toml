@@ -84,7 +84,7 @@ dependencies = [
     "deprecated==1.2.14",
     "beautifulsoup4==4.12.2",
     "Faker==37.11.0",
-    "markdown==3.9",
+    "markdown==3.9"
 ]
 
 [project.optional-dependencies]

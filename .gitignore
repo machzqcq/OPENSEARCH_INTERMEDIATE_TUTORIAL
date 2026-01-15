@@ -29,3 +29,6 @@
 **/*.egg-info/
 **/*.arrow
 **/docling_tutorial_data
+**/mock_data_extraction
+**/mock_data_serialization
+**/volumes/
