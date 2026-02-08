@@ -70,7 +70,7 @@ OPENSEARCH_USERNAME = 'admin'
 OPENSEARCH_PASSWORD = 'Developer@123'
 OPENSEARCH_CLUSTER_URL = {'host': OPENSEARCH_HOST, 'port': OPENSEARCH_PORT}
 
-# DeepSeek Configuration
+# DeepSeek Configuration (kept for backward compatibility)
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
 DEEPSEEK_MODEL = 'deepseek-chat'
@@ -98,8 +98,232 @@ global_state = {
     'last_metadata_context': None,
     'conversation_memory_id': None,
     'conversation_history': [],
-    'similar_queries_cache': None
+    'similar_queries_cache': None,
+    'selected_provider': None,
+    'selected_model': None,
+    'available_models': {}
 }
+
+# ============================================================================
+# LLM PROVIDER CONFIGURATION
+# ============================================================================
+
+def get_available_models():
+    """
+    Query model providers at runtime to get all available models.
+    
+    Returns:
+        dict: Dictionary mapping provider names to list of available models
+    """
+    from openai import OpenAI
+    
+    MODEL_OPTIONS = {}
+    
+    # Provider configuration
+    providers_config = {
+        "google": {
+            "api_key_env": "GOOGLE_API_KEY",
+            "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+            "type": "openai"
+        },
+        "anthropic": {
+            "api_key_env": "ANTHROPIC_API_KEY",
+            "base_url": None,
+            "type": "anthropic"
+        },
+        "openai": {
+            "api_key_env": "OPENAI_API_KEY",
+            "base_url": None,
+            "type": "openai"
+        },
+        "deepseek": {
+            "api_key_env": "OPENROUTER_API_KEY",
+            "base_url": "https://openrouter.ai/api/v1",
+            "type": "openrouter"
+        }
+    }
+    
+    for provider, config in providers_config.items():
+        api_key = os.getenv(config["api_key_env"])
+        
+        if not api_key:
+            print(f"⚠ Warning: {config['api_key_env']} not found, skipping {provider}")
+            continue
+        
+        # Strip whitespace and quotes that might be in .env file
+        api_key = api_key.strip().strip('"').strip("'")
+        
+        try:
+            if config["type"] == "anthropic":
+                # Query available Anthropic models using the SDK
+                from anthropic import Anthropic
+                
+                client = Anthropic(api_key=api_key)
+                
+                # List all available models
+                models_response = client.models.list()
+                all_models = [model.id for model in models_response.data]
+                
+                # Sort models with newest first (based on date in model name)
+                all_models = sorted(all_models, reverse=True)
+                
+                if all_models:
+                    MODEL_OPTIONS[provider] = all_models
+                    print(f"✓ Loaded {len(MODEL_OPTIONS[provider])} models for {provider}")
+                else:
+                    # Fallback to basic list if no models returned
+                    MODEL_OPTIONS[provider] = ["claude-3-haiku-20240307"]
+                    print(f"⚠ No models returned for {provider}, using fallback")
+                
+            elif config["type"] == "openrouter":
+                # OpenRouter uses OpenAI-compatible API
+                client = OpenAI(
+                    api_key=api_key,
+                    base_url=config["base_url"]
+                )
+                
+                # List available models from OpenRouter
+                models_response = client.models.list()
+                all_models = [model.id for model in models_response.data]
+                
+                # Filter for DeepSeek models on OpenRouter
+                if provider == "deepseek":
+                    models = [m for m in all_models if "deepseek" in m.lower()]
+                else:
+                    models = all_models
+                
+                # If no models match filter, show warning with available models
+                if not models:
+                    print(f"⚠ Warning: No models matched filter for {provider}")
+                    print(f"  Available models: {', '.join(all_models[:5])}{'...' if len(all_models) > 5 else ''}")
+                    models = all_models  # Use all models as fallback
+                
+                MODEL_OPTIONS[provider] = sorted(models, reverse=True) if models else models
+                print(f"✓ Loaded {len(MODEL_OPTIONS[provider])} models for {provider}")
+                
+            else:  # OpenAI-compatible providers (google, openai)
+                client_args = {"api_key": api_key}
+                if config["base_url"]:
+                    client_args["base_url"] = config["base_url"]
+                
+                client = OpenAI(**client_args)
+                
+                # List available models
+                models_response = client.models.list()
+                all_models = [model.id for model in models_response.data]
+                
+                # Filter models based on provider
+                if provider == "google":
+                    # Filter for Gemini models
+                    models = [m for m in all_models if "gemini" in m.lower()]
+                elif provider == "openai":
+                    # Filter for GPT models (including o1, o3 series)
+                    models = [m for m in all_models if any(keyword in m.lower() for keyword in ["gpt-4", "gpt-3.5", "gpt-4o", "o1", "o3"])]
+                else:
+                    models = all_models
+                
+                # If no models match filter, show warning with available models
+                if not models:
+                    print(f"⚠ Warning: No models matched filter for {provider}")
+                    print(f"  Available models: {', '.join(all_models[:5])}{'...' if len(all_models) > 5 else ''}")
+                    models = all_models  # Use all models as fallback
+                
+                MODEL_OPTIONS[provider] = sorted(models, reverse=True) if models else models
+                print(f"✓ Loaded {len(MODEL_OPTIONS[provider])} models for {provider}")
+                
+        except Exception as e:
+            error_msg = str(e)
+            print(f"✗ Error loading models for {provider}: {error_msg}")
+            
+            # Special handling for API key errors
+            if "401" in error_msg or "invalid_api_key" in error_msg.lower():
+                print(f"  → API key issue detected. Please verify {config['api_key_env']} in .env file")
+                print(f"  → Key starts with: {api_key[:10]}... (length: {len(api_key)})")
+            elif "connection" in error_msg.lower():
+                print(f"  → Network connection issue. Check internet connectivity or proxy settings")
+            
+            # Fallback to predefined list
+            fallback_models = {
+                "google": ["gemini-2.0-flash-exp", "gemini-2.5-flash", "gemini-1.5-pro", "gemini-1.5-flash"],
+                "openai": ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
+                "deepseek": ["deepseek-chat", "deepseek-reasoner"],
+                "anthropic": ["claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"]
+            }
+            if provider in fallback_models:
+                MODEL_OPTIONS[provider] = fallback_models[provider]
+                print(f"  → Using fallback models for {provider}")
+    
+    return MODEL_OPTIONS
+
+def call_llm(messages, max_tokens=1000, temperature=0.1):
+    """
+    Unified LLM call function that uses the selected provider and model.
+    
+    Args:
+        messages: List of message dicts with 'role' and 'content'
+        max_tokens: Maximum tokens in response
+        temperature: Temperature for generation
+        
+    Returns:
+        tuple: (response_text, error_message)
+    """
+    provider = global_state.get('selected_provider')
+    model = global_state.get('selected_model')
+    
+    if not provider or not model:
+        return None, "❌ Please select a provider and model in the Setup & Connect tab"
+    
+    try:
+        if provider == "anthropic":
+            from anthropic import Anthropic
+            api_key = os.getenv('ANTHROPIC_API_KEY')
+            if not api_key:
+                return None, "❌ ANTHROPIC_API_KEY not found in environment"
+            
+            client = Anthropic(api_key=api_key.strip().strip('"').strip("'"))
+            response = client.messages.create(
+                model=model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                messages=messages
+            )
+            return response.content[0].text, None
+            
+        elif provider in ["google", "openai", "deepseek"]:
+            from openai import OpenAI
+            
+            # Get API key and base URL based on provider
+            if provider == "google":
+                api_key = os.getenv('GOOGLE_API_KEY')
+                base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
+            elif provider == "openai":
+                api_key = os.getenv('OPENAI_API_KEY')
+                base_url = None
+            else:  # deepseek
+                api_key = os.getenv('OPENROUTER_API_KEY')
+                base_url = "https://openrouter.ai/api/v1"
+            
+            if not api_key:
+                return None, f"❌ API key not found for {provider}"
+            
+            client_args = {"api_key": api_key.strip().strip('"').strip("'")}
+            if base_url:
+                client_args["base_url"] = base_url
+            
+            client = OpenAI(**client_args)
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                max_tokens=max_tokens,
+                temperature=temperature
+            )
+            return response.choices[0].message.content, None
+            
+        else:
+            return None, f"❌ Unknown provider: {provider}"
+            
+    except Exception as e:
+        return None, f"❌ LLM call failed: {str(e)}"
 
 # ============================================================================
 # DATABASE CONNECTION CLASS
@@ -352,9 +576,9 @@ def save_metadata_to_excel(metadata_df, db_name, sheet_name='Metadata'):
 # ============================================================================
 
 def call_deepseek_api(sample_values, column_name, table_name, data_type):
-    """Call DeepSeek API to generate column description"""
-    if not DEEPSEEK_API_KEY:
-        return f"AI description for {column_name} (API key not configured)"
+    """Generate column description using configured LLM"""
+    if not global_state.get('selected_provider') or not global_state.get('selected_model'):
+        return f"AI description for {column_name} (LLM not configured - select provider/model in Tab 1)"
     
     try:
         sample_str = ", ".join([str(val) for val in sample_values[:10] if val is not None])
@@ -367,25 +591,13 @@ def call_deepseek_api(sample_values, column_name, table_name, data_type):
 
 Provide a concise description (max 40 words) of what this column contains."""
         
-        headers = {
-            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-            "Content-Type": "application/json"
-        }
+        messages = [{"role": "user", "content": prompt}]
+        response, error = call_llm(messages, max_tokens=300, temperature=0.1)
         
-        data = {
-            "model": "deepseek-chat",
-            "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 300,
-            "temperature": 0.1
-        }
+        if error:
+            return f"API error for {column_name}: {error}"
         
-        response = requests.post(DEEPSEEK_API_URL, headers=headers, json=data, timeout=30)
-        
-        if response.status_code == 200:
-            result = response.json()
-            return result["choices"][0]["message"]["content"].strip()
-        else:
-            return f"API error for {column_name}"
+        return response.strip()
             
     except Exception as e:
         return f"Error: {str(e)}"
@@ -449,9 +661,9 @@ def enhance_metadata_with_llm(metadata_df, db_connector, progress=gr.Progress())
 # ============================================================================
 
 def call_deepseek_api_for_table(sample_df, schema, table, column_list):
-    """Generate table-level description using LLM"""
-    if not DEEPSEEK_API_KEY:
-        return f"Table description for {schema}.{table} (API key not configured)"
+    """Generate table-level description using configured LLM"""
+    if not global_state.get('selected_provider') or not global_state.get('selected_model'):
+        return f"Table description for {schema}.{table} (LLM not configured - select provider/model in Tab 1)"
     
     try:
         sample_summary = []
@@ -471,25 +683,13 @@ Sample Rows:
 
 Provide a concise description (max 60 words) of what this table stores and its business purpose."""
         
-        headers = {
-            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-            "Content-Type": "application/json"
-        }
+        messages = [{"role": "user", "content": prompt}]
+        response, error = call_llm(messages, max_tokens=400, temperature=0.1)
         
-        data = {
-            "model": "deepseek-chat",
-            "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 400,
-            "temperature": 0.1
-        }
+        if error:
+            return f"API error for table {schema}.{table}: {error}"
         
-        response = requests.post(DEEPSEEK_API_URL, headers=headers, json=data, timeout=30)
-        
-        if response.status_code == 200:
-            result = response.json()
-            return result["choices"][0]["message"]["content"].strip()
-        else:
-            return f"API error for table {schema}.{table}"
+        return response.strip()
             
     except Exception as e:
         return f"Error: {str(e)}"
@@ -853,9 +1053,9 @@ def format_metadata_for_llm(metadata_list):
     return context
 
 def generate_sql_with_deepseek(query_text, metadata_context, conversation_history=None):
-    """Generate SQL query using DeepSeek LLM with conversation memory"""
-    if not DEEPSEEK_API_KEY:
-        return None, "DeepSeek API key not configured"
+    """Generate SQL query using configured LLM with conversation memory"""
+    if not global_state.get('selected_provider') or not global_state.get('selected_model'):
+        return None, "LLM not configured - please select provider/model in Tab 1"
     
     try:
         # Build the prompt with conversation history if available
@@ -954,30 +1154,17 @@ If schema shows for sales.salesorderdetail:
 
 SQL Query:"""
         
-        headers = {
-            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-            "Content-Type": "application/json"
-        }
+        messages = [{"role": "user", "content": prompt}]
+        response, error = call_llm(messages, max_tokens=1000, temperature=0.1)
         
-        data = {
-            "model": "deepseek-chat",
-            "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 1000,
-            "temperature": 0.1
-        }
+        if error:
+            return None, error
         
-        response = requests.post(DEEPSEEK_API_URL, headers=headers, json=data, timeout=60)
+        # Clean up SQL query
+        sql_query = response.strip()
+        sql_query = sql_query.replace("```sql", "").replace("```", "").strip()
         
-        if response.status_code == 200:
-            result = response.json()
-            sql_query = result["choices"][0]["message"]["content"].strip()
-            
-            # Clean up SQL query
-            sql_query = sql_query.replace("```sql", "").replace("```", "").strip()
-            
-            return sql_query, None
-        else:
-            return None, f"API Error: {response.status_code}"
+        return sql_query, None
             
     except Exception as e:
         return None, f"Error: {str(e)}"
@@ -1542,9 +1729,9 @@ def create_visualizations(df):
         return None, None, None, None, f"Visualization error: {str(e)}"
 
 def generate_business_insights(df, original_query, sql_query, analysis_results):
-    """Generate business insights using LLM"""
-    if not DEEPSEEK_API_KEY:
-        return "DeepSeek API key not configured for insights generation"
+    """Generate business insights using configured LLM"""
+    if not global_state.get('selected_provider') or not global_state.get('selected_model'):
+        return "LLM not configured - please select provider/model in Tab 1 for insights generation"
     
     try:
         # Prepare data summary
@@ -1575,26 +1762,13 @@ Provide a comprehensive business intelligence report with:
 
 Format your response in clear sections with markdown formatting."""
         
-        headers = {
-            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-            "Content-Type": "application/json"
-        }
+        messages = [{"role": "user", "content": prompt}]
+        response, error = call_llm(messages, max_tokens=2000, temperature=0.7)
         
-        data = {
-            "model": "deepseek-chat",
-            "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 2000,
-            "temperature": 0.7
-        }
+        if error:
+            return f"Error generating insights: {error}"
         
-        response = requests.post(DEEPSEEK_API_URL, headers=headers, json=data, timeout=90)
-        
-        if response.status_code == 200:
-            result = response.json()
-            insights = result["choices"][0]["message"]["content"].strip()
-            return insights
-        else:
-            return f"Error generating insights: {response.status_code}"
+        return response.strip()
             
     except Exception as e:
         return f"Error: {str(e)}"
@@ -1660,6 +1834,44 @@ def setup_opensearch(progress=gr.Progress()):
         return "\n".join(status_updates)
     except Exception as e:
         return f"❌ Setup failed: {str(e)}"
+
+def load_available_models_ui():
+    """Load available models from all providers"""
+    try:
+        models = get_available_models()
+        global_state['available_models'] = models
+        
+        if not models:
+            return "❌ No models available. Please check API keys in .env file", gr.update(choices=[], value=None), gr.update(choices=[], value=None)
+        
+        providers = list(models.keys())
+        status_msg = f"✅ Loaded models from {len(providers)} provider(s): {', '.join(providers)}"
+        
+        # Return provider dropdown update
+        return status_msg, gr.update(choices=providers, value=providers[0] if providers else None), gr.update(choices=[], value=None)
+    except Exception as e:
+        return f"❌ Error loading models: {str(e)}", gr.update(choices=[], value=None), gr.update(choices=[], value=None)
+
+def update_model_dropdown(provider):
+    """Update model dropdown based on selected provider"""
+    if not provider:
+        return gr.update(choices=[], value=None)
+    
+    models = global_state.get('available_models', {}).get(provider, [])
+    if not models:
+        return gr.update(choices=[], value=None)
+    
+    return gr.update(choices=models, value=models[0] if models else None)
+
+def select_provider_model(provider, model):
+    """Store selected provider and model in global state"""
+    if not provider or not model:
+        return "❌ Please select both provider and model"
+    
+    global_state['selected_provider'] = provider
+    global_state['selected_model'] = model
+    
+    return f"✅ Selected: {provider} / {model}"
 
 def extract_metadata_ui(progress=gr.Progress()):
     """Extract metadata from database (UI function)"""
@@ -2150,7 +2362,7 @@ def create_gradio_interface():
             with gr.Tab("1️⃣ Setup & Connect"):
                 gr.Markdown("## Database & OpenSearch Setup")
                 gr.Markdown("""
-                **Step 1**: Connect to PostgreSQL database and initialize OpenSearch.
+                **Step 1a**: Connect to PostgreSQL database and initialize OpenSearch.
                 
                 - Connects to the PostgreSQL database specified in .env file
                 - Initializes OpenSearch client and configures cluster
@@ -2166,8 +2378,60 @@ def create_gradio_interface():
                         setup_os_btn = gr.Button("⚙️ Setup OpenSearch", variant="primary")
                         os_status = gr.Textbox(label="OpenSearch Setup Progress", lines=6)
                 
+                gr.Markdown("---")
+                gr.Markdown("## LLM Provider Configuration")
+                gr.Markdown("""
+                **Step 1b**: Configure the LLM provider and model for AI-powered features.
+                
+                - Load available models from configured providers (Google, OpenAI, Anthropic, DeepSeek)
+                - Select your preferred provider and model
+                - This selection will be used for all AI features (metadata enhancement, SQL generation, insights)
+                - **Important**: Make sure you have the required API keys in your .env file
+                """)
+                
+                with gr.Row():
+                    with gr.Column():
+                        load_models_btn = gr.Button("🔍 Load Available Models", variant="primary")
+                        models_status = gr.Textbox(label="Models Status", lines=3)
+                    
+                    with gr.Column():
+                        provider_dropdown = gr.Dropdown(
+                            label="Select Provider",
+                            choices=[],
+                            value=None,
+                            interactive=True
+                        )
+                        model_dropdown = gr.Dropdown(
+                            label="Select Model",
+                            choices=[],
+                            value=None,
+                            interactive=True
+                        )
+                
+                with gr.Row():
+                    confirm_llm_btn = gr.Button("✅ Confirm LLM Selection", variant="secondary")
+                    llm_selection_status = gr.Textbox(label="Selection Status", lines=1)
+                
+                # Wire up the callbacks
                 connect_db_btn.click(connect_to_database, outputs=db_status)
                 setup_os_btn.click(setup_opensearch, outputs=os_status, show_progress=True)
+                
+                load_models_btn.click(
+                    load_available_models_ui,
+                    outputs=[models_status, provider_dropdown, model_dropdown]
+                )
+                
+                provider_dropdown.change(
+                    update_model_dropdown,
+                    inputs=provider_dropdown,
+                    outputs=model_dropdown
+                )
+                
+                confirm_llm_btn.click(
+                    select_provider_model,
+                    inputs=[provider_dropdown, model_dropdown],
+                    outputs=llm_selection_status
+                )
             
             # ===== TAB 2: Extract Metadata =====
             with gr.Tab("2️⃣ Extract Metadata"):
@@ -2193,12 +2457,14 @@ def create_gradio_interface():
             with gr.Tab("3️⃣ Enhance with AI"):
                 gr.Markdown("## Enhance Metadata with AI Descriptions")
                 gr.Markdown("""
-                **Step 3**: Use DeepSeek LLM to generate intelligent descriptions OR upload previously generated metadata.
+                **Step 3**: Use your selected LLM to generate intelligent descriptions OR upload previously generated metadata.
+                
+                **Important**: Make sure you've selected an LLM provider and model in Tab 1!
                 
                 ### Option A: Generate Fresh AI Descriptions (Takes Time)
                 - **Column Descriptions**: Samples data from each column and generates descriptions
                 - **Table Descriptions**: Analyzes table structure and sample rows to describe purpose
-                - Uses AI to understand data meaning and business context
+                - Uses your configured AI model to understand data meaning and business context
                 - **Note**: This makes API calls and may take 5-15 minutes for large databases
                 
                 ### Option B: Upload Previously Generated Metadata (Fast)
@@ -2573,7 +2839,7 @@ def create_gradio_interface():
                 **Components**:
                 - PostgreSQL: Source database
                 - OpenSearch: Vector database for RAG
-                - DeepSeek: LLM for SQL generation and insights
+                - Multi-Provider LLM: Google Gemini, OpenAI GPT, Anthropic Claude, or DeepSeek
                 - Gradio: User interface
                 
                 **RAG Pipeline**:
@@ -2588,14 +2854,14 @@ def create_gradio_interface():
                 
                 Edit `.env` file for:
                 - Database credentials
-                - API keys
+                - API keys (GOOGLE_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, OPENROUTER_API_KEY)
                 - OpenSearch settings
                 
                 See README.md for detailed setup instructions.
                 """)
         
         gr.Markdown("---")
-        gr.Markdown("*Powered by PostgreSQL, OpenSearch, DeepSeek, and Gradio*")
+        gr.Markdown("*Powered by PostgreSQL, OpenSearch, Multi-Provider LLMs, and Gradio*")
     
     return demo
 
@@ -2608,7 +2874,13 @@ if __name__ == "__main__":
     print("🚀 Starting Business Intelligence RAG Application")
     print("="*80)
     print(f"📂 Working Directory: {os.getcwd()}")
-    print(f"🔑 API Keys Configured: {'✅' if DEEPSEEK_API_KEY else '❌'}")
+    print(f"\n🔑 Checking API Keys:")
+    print(f"  - GOOGLE_API_KEY: {'✅' if os.getenv('GOOGLE_API_KEY') else '❌'}")
+    print(f"  - OPENAI_API_KEY: {'✅' if os.getenv('OPENAI_API_KEY') else '❌'}")
+    print(f"  - ANTHROPIC_API_KEY: {'✅' if os.getenv('ANTHROPIC_API_KEY') else '❌'}")
+    print(f"  - OPENROUTER_API_KEY (DeepSeek): {'✅' if os.getenv('OPENROUTER_API_KEY') else '❌'}")
+    print(f"  - DEEPSEEK_API_KEY (Legacy): {'✅' if os.getenv('DEEPSEEK_API_KEY') else '❌'}")
+    print(f"\n💡 Configure LLM provider in the UI (Tab 1) after launch")
     print("="*80)
     
     # Create and launch interface
